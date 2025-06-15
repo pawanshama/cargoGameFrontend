@@ -110,17 +110,17 @@ const handleLaunchGame = async () => {
     const initData = window.Telegram?.WebApp?.initData;
     if (!initData) throw new Error("initData non trouvé");
 
-    // Appel sécurisé : /match/token
-    const tokenRes = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/match/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `tma ${initData}`,
-      },
-      body: JSON.stringify({
-        betAmount: amount,
-      }),
-    });
+    // Appel sécurisé : /match/start
+    const tokenRes = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/match/start", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `tma ${initData}`, // Toujours initData ici
+  },
+  body: JSON.stringify({
+    betAmount: amount, // C’est tout ce que tu envoies
+  }),
+});
 
     if (!tokenRes.ok) {
       const text = await tokenRes.text();
