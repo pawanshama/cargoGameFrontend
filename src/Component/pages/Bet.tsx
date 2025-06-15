@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, memo, useRef } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import Footer from "../includes/Footer";
 import Header from "../includes/Header";
 import Statistics from "../modals/Statistics";
@@ -10,7 +10,6 @@ import IncrementDecrementInput from "../bet/IncrementDecrementInput";
 import UserTable from "../bet/UserTable";
 import OnlinePlayersStats from "../bet/OnlinePlayersStats";
 import ImgWithFallback from "../common/ImageWithFallback";
-import Game from "./Game";
 import useTelegramSafeSound from "../../hooks/useTelegramSafeSound";
 import MatchResult from "../pages/MatchResult";
 
@@ -39,13 +38,12 @@ const Bet = () => {
   const [isStatisticsShow, setIsStatisticsShow] = useState(false);
   const [selectedRadio, setSelectedRadio] = useState("ton");
   const [showGame, setShowGame] = useState(false);
+  const [gameUrl, setGameUrl] = useState<string | null>(null);
   const [multiplier, setMultiplier] = useState(1);
   const [amount, setAmount] = useState(0.1);
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipX, setTooltipX] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const matchIdRef = useRef<string | null>(null);
-  const surplusPoolIdRef = useRef<string | undefined>(undefined);
     const [resetKey, setResetKey] = useState(0);
   const [showUI, setShowUI] = useState(true); // NEW
 
@@ -97,61 +95,59 @@ const Bet = () => {
     setSelectedRadio(selectedId);
   };
 
-  const handleLaunchGame = async () => {
-    console.log("▶️ handleLaunchGame lancé");
-    console.log("Mise :", amount);
-    if (isLoading || amount < 0.1) {
-      console.warn("⛔ Mise invalide ou chargement en cours");
-      return;
+const handleLaunchGame = async () => {
+  console.log("▶️ handleLaunchGame lancé");
+  console.log("Mise :", amount);
+  if (isLoading || amount < 0.1) {
+    console.warn("⛔ Mise invalide ou chargement en cours");
+    return;
+  }
+
+  try {
+    setIsLoading(true);
+    playBetSound();
+
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData) throw new Error("initData not found");
+
+    const res = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/match/start", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `tma ${initData}`,
+      },
+      body: JSON.stringify({ betAmount: amount }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error(`Erreur HTTP ${res.status} : ${text}`);
+      throw new Error(`Erreur HTTP ${res.status}`);
     }
 
-    try {
-      setIsLoading(true);
-      playBetSound();
+    const data = await res.json();
+    console.log("📦 Réponse match/start:", data);
 
-      const initData = window.Telegram?.WebApp?.initData;
-if (!initData) throw new Error("initData not found");
+    if (!data.matchId) throw new Error("Match ID not returned");
 
-const res = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/match/start", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `tma ${initData}`,
-  },
-  body: JSON.stringify({ betAmount: amount }),
-});
-
-
-
-
-      if (!res.ok) {
-  const text = await res.text();
-  console.error(`Erreur HTTP ${res.status} : ${text}`);
-  throw new Error(`Erreur HTTP ${res.status}`);
-}
-const data = await res.json();
-console.log("📦 Réponse match/start:", data);
-
-if (!data.matchId) throw new Error("Match ID not returned");
-isAloneRef.current = data.status === "newPoolCreated";
-matchIdRef.current = data.matchId;
-surplusPoolIdRef.current = data.surplusPool?.id ?? undefined;
-console.log("💾 ID de la surplus pool:", surplusPoolIdRef.current);
- // ✅ stocke l'ID du match surplus
-
-
-
- 
-
-
-      setShowGame(true);
-    } catch (error) {
-      console.error("❌ Erreur pendant le matchmaking :", error);
-      setIsLoading(false);
+    const gameUrl = new URL("https://corgi-game-dist.vercel.app/");
+    gameUrl.searchParams.set("matchId", data.matchId);
+    if (data.surplusPool?.id) {
+      gameUrl.searchParams.set("poolId", data.surplusPool.id);
     }
-  };
+    if (data.status === "newPoolCreated") {
+      gameUrl.searchParams.set("isAlone", "true");
+    }
 
-  const isAloneRef = useRef(false);
+    setGameUrl(gameUrl.toString());
+    setShowGame(true);
+  } catch (error) {
+    console.error("❌ Erreur pendant le matchmaking :", error);
+    setIsLoading(false);
+  }
+};
+
+
   
 
 
@@ -174,31 +170,19 @@ console.log("💾 ID de la surplus pool:", surplusPoolIdRef.current);
     );
   }
 
-  if (showGame && matchIdRef.current) {
+if (showGame && gameUrl) {
   return (
-<Game
-  matchId={matchIdRef.current}
-  surplusPoolId={surplusPoolIdRef.current ?? undefined}
-  isAlone={isAloneRef.current}
-  onResolved={(data) => {
-    console.log("✅ Résultat du match :", data);
-    setMatchResult({
-      result: data.result,
-      userScore: data?.score ?? 0,
-      opponentScore: data?.opponentScore ?? 0,
-      betAmount: amount,
-      reward: data.reward ?? 0,
-    });
-    setShowGame(false);
-    setIsLoading(false);
-  }}
-/>
-
-
-
-
+    <div className="w-full h-[100dvh] overflow-hidden">
+      <iframe
+        src={gameUrl}
+        title="Corgi Game"
+        className="w-full h-full border-none"
+        allow="autoplay; fullscreen"
+      />
+    </div>
   );
 }
+
 
 
 
