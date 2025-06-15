@@ -108,36 +108,30 @@ const handleLaunchGame = async () => {
     playBetSound();
 
     const initData = window.Telegram?.WebApp?.initData;
-    if (!initData) throw new Error("initData not found");
+    if (!initData) throw new Error("initData non trouvé");
 
-    const res = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/match/start", {
+    // Appel sécurisé : /match/token
+    const tokenRes = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/match/token", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `tma ${initData}`,
       },
-      body: JSON.stringify({ betAmount: amount }),
+      body: JSON.stringify({
+        betAmount: amount,
+      }),
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      console.error(`Erreur HTTP ${res.status} : ${text}`);
-      throw new Error(`Erreur HTTP ${res.status}`);
+    if (!tokenRes.ok) {
+      const text = await tokenRes.text();
+      throw new Error(`Erreur HTTP ${tokenRes.status} : ${text}`);
     }
 
-    const data = await res.json();
-    console.log("📦 Réponse match/start:", data);
+    const { token } = await tokenRes.json();
 
-    if (!data.matchId) throw new Error("Match ID not returned");
-
+    // On injecte le token dans l'iframe
     const gameUrl = new URL("https://corgi-game-dist.vercel.app/");
-    gameUrl.searchParams.set("matchId", data.matchId);
-    if (data.surplusPool?.id) {
-      gameUrl.searchParams.set("poolId", data.surplusPool.id);
-    }
-    if (data.status === "newPoolCreated") {
-      gameUrl.searchParams.set("isAlone", "true");
-    }
+    gameUrl.searchParams.set("token", token);
 
     setGameUrl(gameUrl.toString());
     setShowGame(true);
@@ -146,6 +140,7 @@ const handleLaunchGame = async () => {
     setIsLoading(false);
   }
 };
+
 
 
   
