@@ -111,30 +111,41 @@ const handleLaunchGame = async () => {
     if (!initData) throw new Error("initData non trouvé");
 
     // Appel sécurisé : /match/start
-    const tokenRes = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/match/start", {
+// 🎯 Appel sécurisé à /match/start
+const tokenRes = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/match/start", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
     Authorization: `tma ${initData}`, // Toujours initData ici
   },
   body: JSON.stringify({
-    betAmount: amount, // C’est tout ce que tu envoies
+    betAmount: amount, // La mise uniquement (le backend génère matchId, poolId, etc.)
   }),
 });
 
-    if (!tokenRes.ok) {
-      const text = await tokenRes.text();
-      throw new Error(`Erreur HTTP ${tokenRes.status} : ${text}`);
-    }
+// 🧪 Vérifie la réponse HTTP
+if (!tokenRes.ok) {
+  const text = await tokenRes.text();
+  throw new Error(`Erreur HTTP ${tokenRes.status} : ${text}`);
+}
 
-    const { token } = await tokenRes.json();
+// ✅ Récupère et vérifie le token
+const resJson = await tokenRes.json();
+console.log("📡 Réponse du backend /match/start :", resJson);
 
-    // On injecte le token dans l'iframe
-    const gameUrl = new URL("https://corgi-game-dist.vercel.app/");
-    gameUrl.searchParams.set("token", token);
+const { token } = resJson;
+if (!token) {
+  throw new Error("❌ Token manquant dans la réponse backend");
+}
 
-    setGameUrl(gameUrl.toString());
-    setShowGame(true);
+// 🕹️ Injection du token dans l'URL du jeu
+const url = new URL("https://corgi-game-dist.vercel.app/");
+url.searchParams.set("token", token);
+console.log("🎯 Token injecté dans l'iframe :", url.toString());
+
+setGameUrl(url.toString());
+setShowGame(true);
+
   } catch (error) {
     console.error("❌ Erreur pendant le matchmaking :", error);
     setIsLoading(false);
