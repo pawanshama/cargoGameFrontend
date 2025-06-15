@@ -1,0 +1,10 @@
+{
+  "manifestVersion": "2",
+  "id": "corgi-in-space",
+  "name": "Corgi In Space",
+  "description": "Miniapp de skill gaming avec crypto",
+  "url": "https://corgi-in-space-front-end.vercel.app",
+  "iconUrl": "https://corgi-in-space-front-end.vercel.app/logo.png",
+  "termsOfUseUrl": "https://corgi-in-space-front-end.vercel.app/terms",
+  "privacyPolicyUrl": "https://corgi-in-space-front-end.vercel.app/privacy"
+}

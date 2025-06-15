@@ -1,0 +1,14 @@
+# Use mod_rewrite for pretty URLs
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Redirect all requests to index.html
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.html [QSA,L]
+</IfModule>
+
+# Serve static assets directly
+<FilesMatch "\.(html|js|css|png|jpg|gif|ico|svg|webp)$">
+  Header set Cache-Control "max-age=31536000, public"
+</FilesMatch>

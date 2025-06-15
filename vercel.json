@@ -1,0 +1,36 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://corgi-in-space-backend-production.up.railway.app/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/tonconnect-manifest-v2.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.(html|js|css|json|webp|woff2|woff|otf|ttf|png|jpg|jpeg|svg)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
+  ]
+}
