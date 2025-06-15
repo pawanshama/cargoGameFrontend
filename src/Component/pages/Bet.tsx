@@ -133,7 +133,8 @@ if (!tokenRes.ok) {
 const resJson = await tokenRes.json();
 console.log("📡 Réponse du backend /match/start :", resJson);
 
-const { token } = resJson;
+const { matchToken: token } = resJson;
+
 if (!token) {
   throw new Error("❌ Token manquant dans la réponse backend");
 }
