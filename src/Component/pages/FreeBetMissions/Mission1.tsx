@@ -120,7 +120,8 @@ const Mission1: React.FC<Mission1Props> = ({
         console.log("🧼 Socket proprement fermé");
       }
     };
-  }, []);
+}, [window.Telegram?.WebApp?.initData, window.Telegram?.WebApp?.initDataUnsafe?.user?.id]);
+
 
   if (loading) {
     return <div className="text-white text-center mt-10">Loading...</div>;
