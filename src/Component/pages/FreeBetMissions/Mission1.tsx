@@ -40,41 +40,45 @@ const Mission1: React.FC<Mission1Props> = ({
 
     // ✅ Fonction pour fetch le statut du dépôt
     const fetchDeposit = async () => {
-      console.log("📡 Envoi requête /deposit-status");
+  console.log("📡 Envoi requête /deposit-status");
 
-      try {
-        const res = await fetch(
-          "https://corgi-in-space-backend-production.up.railway.app/api/user/deposit-status",
-          {
-            headers: {
-              Authorization: `tma ${initData}`,
-            },
-          }
-        );
-
-        console.log("📨 Status HTTP:", res.status);
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error("❌ Erreur HTTP deposit-status :", errorText);
-          return false;
-        }
-
-        const data = await res.json();
-        console.log("🎯 Résultat deposit-status :", data);
-
-        if (data?.hasDeposited && typeof data.depositAmount === "number") {
-          setHasDeposited(true);
-          setDepositAmount(data.depositAmount);
-          setLoading(false);
-          return true;
-        }
-      } catch (err) {
-        console.error("❌ Exception fetchDeposit:", err);
+  try {
+    const res = await fetch(
+      "https://corgi-in-space-backend-production.up.railway.app/api/user/deposit-status",
+      {
+        headers: {
+          Authorization: `tma ${initData}`,
+        },
       }
+    );
 
+    console.log("📨 Status HTTP:", res.status);
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("❌ Erreur HTTP deposit-status :", errorText);
+      setLoading(false); // ✅ obligatoire
       return false;
-    };
+    }
+
+    const data = await res.json();
+    console.log("🎯 Résultat deposit-status :", data);
+
+    if (data?.hasDeposited && typeof data.depositAmount === "number") {
+      setHasDeposited(true);
+      setDepositAmount(data.depositAmount);
+      setLoading(false);
+      return true;
+    }
+  } catch (err) {
+    console.error("❌ Exception fetchDeposit:", err);
+    setLoading(false); // ✅ obligatoire
+  }
+
+  setLoading(false); // ✅ si data non conforme
+  return false;
+};
+
 
     // ⏱️ 1. Fetch immédiat puis retries
     fetchDeposit().then((success) => {
