@@ -23,8 +23,7 @@ const missions = [
 const FreeBetMissions = () => {
   const [activeMission, setActiveMission] = useState<number | null>(null);
   const [activePopupMission, setActivePopupMission] = useState<number | null>(null);
-  const [hasDeposited, setHasDeposited] = useState<boolean | null>(null);
-  const [depositAmount, setDepositAmount] = useState<number>(0); // ✅ ajouté
+  const [hasDeposited, setHasDeposited] = useState<boolean | null>(null); // ❗ utilisé pour bloquer l'accès à Mission 1
 
   const [invitedCount, setInvitedCount] = useState<number>(0);
   const [totalCashback, setTotalCashback] = useState<number>(0);
@@ -37,7 +36,6 @@ const FreeBetMissions = () => {
     const initData = window.Telegram?.WebApp?.initData;
     if (!initData) return;
 
-    // Mission 1: Dépôt
     const checkFirstDeposit = async () => {
       try {
         const res = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/user/deposit-status", {
@@ -47,13 +45,11 @@ const FreeBetMissions = () => {
         });
         const data = await res.json();
         setHasDeposited(data.hasDeposited);
-        setDepositAmount(data.depositAmount || 0); // ✅ nouveau champ
       } catch (err) {
         console.error("❌ Erreur lors de la récupération du statut de dépôt :", err);
       }
     };
 
-    // Mission 2: Parrainage
     const fetchInviteStats = async () => {
       try {
         const res = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/user/invite-status", {
@@ -97,7 +93,7 @@ const FreeBetMissions = () => {
             key={mission.id}
             className="w-full border border-[#9752b9] rounded-xl px-5 py-4 flex justify-between items-center cursor-pointer active:scale-95 transition-transform duration-100"
             onClick={() => {
-              if (mission.id === 1 && hasDeposited) return; // Mission 1 déjà faite
+              if (mission.id === 1 && hasDeposited) return;
               setActiveMission(mission.id);
             }}
           >
@@ -119,13 +115,10 @@ const FreeBetMissions = () => {
         ))}
       </div>
 
-      {/* Render Missions */}
       {activeMission === 1 && (
         <Mission1
           onBack={() => setActiveMission(null)}
           onCollect={() => setActivePopupMission(1)}
-          hasDeposited={!!hasDeposited}
-          depositAmount={depositAmount} // ✅ ajouté ici
         />
       )}
       {activeMission === 2 && (
@@ -139,7 +132,6 @@ const FreeBetMissions = () => {
         />
       )}
 
-      {/* Render Popups */}
       {activePopupMission === 1 && (
         <PopupMission1
           onClose={() => {

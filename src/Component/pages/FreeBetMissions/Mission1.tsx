@@ -5,23 +5,14 @@ import Mission1AfterDeposit from "./Mission1AfterDeposit";
 interface Mission1Props {
   onBack: () => void;
   onCollect: () => void;
-  hasDeposited: boolean;
-  depositAmount?: number; // 👈 AJOUT ICI
 }
 
-const Mission1: React.FC<Mission1Props> = ({
-  onBack,
-  onCollect,
-  hasDeposited,
-  depositAmount: initialDepositAmount, // 👈 NOUVEAU
-}) => {
-  const [depositAmount, setDepositAmount] = useState<number | null>(
-    initialDepositAmount ?? null
-  );
+const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
+  const [depositAmount, setDepositAmount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDeposit = async () => {
+    const fetchDepositStatus = async () => {
       const initData = window.Telegram?.WebApp?.initData;
 
       try {
@@ -33,28 +24,27 @@ const Mission1: React.FC<Mission1Props> = ({
             },
           }
         );
+
         const data = await res.json();
+
         if (data?.hasDeposited && typeof data.depositAmount === "number") {
           setDepositAmount(data.depositAmount);
         }
       } catch (err) {
-        console.error("❌ Failed to fetch deposit amount", err);
+        console.error("❌ Failed to fetch deposit status:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    if (hasDeposited && initialDepositAmount === undefined) {
-      fetchDeposit();
-    } else {
-      setLoading(false);
-    }
-  }, [hasDeposited, initialDepositAmount]);
+    fetchDepositStatus();
+  }, []);
 
-  if (loading)
+  if (loading) {
     return <div className="text-white text-center mt-10">Loading...</div>;
+  }
 
-  return hasDeposited && depositAmount !== null ? (
+  return depositAmount !== null ? (
     <Mission1AfterDeposit
       onBack={onBack}
       onCollect={onCollect}
