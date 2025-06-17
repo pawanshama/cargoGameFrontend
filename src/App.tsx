@@ -11,7 +11,7 @@ import "./App.css";
 import Airdrop from "./Component/pages/Airdrop";
 import Wallet from "./Component/pages/Wallet";
 import OnBoarding from "./Component/pages/OnBoarding";
-import FreeBet from "./Component/pages/FreeBet";
+import FreeBetMissions from "./Component/pages/FreeBetMissions";
 import LeaderBoard from "./Component/pages/LeaderBoard";
 import Bet from "./Component/pages/Bet";
 import Congratulations from "./Component/pages/Congratulations";
@@ -23,8 +23,6 @@ import axios from "axios";
 import { TonConnectUIProvider } from "@tonconnect/ui-react";
 import { UserProvider, useUser } from "./Component/context/UserContext";
 import useBackgroundMusic from "./hooks/useBackgroundMusic"; 
-import Mission1Page from "./Component/pages/Mission1Page";
-import Mission2Page from "./Component/pages/Mission2Page";
 //import useFullscreenOnStart from "./hooks/useFullscreenOnStart";
 
 
@@ -87,15 +85,13 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<OnBoarding />} />
       <Route path="/wallet" element={<Wallet />} />
-      <Route path="/free-bet" element={<FreeBet />} />
+      <Route path="/free-bet" element={<FreeBetMissions />} />
       <Route path="/top" element={<LeaderBoard />} />
       <Route path="/bet" element={<Bet />} />
       <Route path="/congratulations" element={<Congratulations />} />
       <Route path="/congratulations-score" element={<CongratulationsWithScore />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
-      <Route path="/missions/1" element={<Mission1Page />} />
-      <Route path="/missions/2" element={<Mission2Page />} />
       <Route path="/airdrop" element={<Airdrop />} />
     </Routes>
   );
