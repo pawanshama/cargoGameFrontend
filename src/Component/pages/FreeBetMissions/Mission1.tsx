@@ -1,5 +1,3 @@
-// src/pages/FreeBetMissions/Mission1.tsx
-
 import React, { useEffect, useState } from "react";
 import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
 import Mission1AfterDeposit from "./Mission1AfterDeposit";
@@ -28,9 +26,22 @@ const Mission1: React.FC<Mission1Props> = ({
     const initData = window.Telegram?.WebApp?.initData;
     const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
 
+    console.log("📦 initData :", initData);
+    console.log("👤 telegramId :", telegramId);
+
     let socket: ReturnType<typeof socketIOClient> | null = null;
 
+    // 🚨 Si pas d'initData → on annule
+    if (!initData || !telegramId) {
+      console.error("❌ initData ou telegramId manquant. Annulation de l'init.");
+      setLoading(false);
+      return;
+    }
+
+    // ✅ Fonction pour fetch le statut du dépôt
     const fetchDeposit = async () => {
+      console.log("📡 Envoi requête /deposit-status");
+
       try {
         const res = await fetch(
           "https://corgi-in-space-backend-production.up.railway.app/api/user/deposit-status",
@@ -40,7 +51,17 @@ const Mission1: React.FC<Mission1Props> = ({
             },
           }
         );
+
+        console.log("📨 Status HTTP:", res.status);
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("❌ Erreur HTTP deposit-status :", errorText);
+          return false;
+        }
+
         const data = await res.json();
+        console.log("🎯 Résultat deposit-status :", data);
 
         if (data?.hasDeposited && typeof data.depositAmount === "number") {
           setHasDeposited(true);
@@ -49,42 +70,50 @@ const Mission1: React.FC<Mission1Props> = ({
           return true;
         }
       } catch (err) {
-        console.error("❌ Failed to fetch deposit amount", err);
+        console.error("❌ Exception fetchDeposit:", err);
       }
+
       return false;
     };
 
-    // 1. Check immédiat
-    fetchDeposit().then((found) => {
-      if (!found) {
+    // ⏱️ 1. Fetch immédiat puis retries
+    fetchDeposit().then((success) => {
+      if (!success) {
         let tries = 0;
         const intervalId = setInterval(async () => {
-          const success = await fetchDeposit();
+          const ok = await fetchDeposit();
           tries++;
-          if (success || tries >= 6) clearInterval(intervalId);
+          if (ok || tries >= 6) clearInterval(intervalId);
         }, 5000);
       }
     });
 
-    // 2. WebSocket pour détection instantanée
-    if (telegramId) {
-      socket = socketIOClient("https://corgi-in-space-backend-production.up.railway.app", {
-        query: { telegramId: telegramId.toString() },
-        transports: ["websocket"],
-      });
+    // 🔌 2. Connexion WebSocket
+    socket = socketIOClient("https://corgi-in-space-backend-production.up.railway.app", {
+      query: { telegramId: telegramId.toString() },
+      transports: ["websocket"],
+    });
 
-      socket.on("first-deposit", (data) => {
-        console.log("🎉 Dépôt détecté via WebSocket :", data);
-        setHasDeposited(true);
-        setDepositAmount(data.amount / 100); // si tu stockes en cents
-        setLoading(false);
-      });
-    }
+    socket.on("connect", () => {
+      console.log("🔌 WebSocket connecté");
+    });
 
-    // 3. Cleanup
+    socket.on("first-deposit", (payload) => {
+      console.log("🎁 Event WebSocket first-deposit :", payload);
+      setHasDeposited(true);
+      setDepositAmount(payload.amount / 100); // Convertir si stocké en cents
+      setLoading(false);
+    });
+
+    socket.on("disconnect", () => {
+      console.log("📴 WebSocket déconnecté");
+    });
+
+    // 🧼 3. Cleanup
     return () => {
       if (socket) {
         socket.disconnect();
+        console.log("🧼 Socket proprement fermé");
       }
     };
   }, []);
