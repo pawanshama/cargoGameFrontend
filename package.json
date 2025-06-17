@@ -27,6 +27,7 @@
     "react-router-dom": "^6.24.1",
     "react-spinners": "^0.14.1",
     "redux": "^5.0.1",
+    "socket.io-client": "^4.8.1",
     "three": "^0.166.1",
     "ton": "^13.9.0"
   },

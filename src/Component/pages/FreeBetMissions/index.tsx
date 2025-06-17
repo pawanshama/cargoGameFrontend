@@ -1,5 +1,3 @@
-// src/pages/FreeBetMissions/index.tsx
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../includes/Header";
@@ -23,7 +21,8 @@ const missions = [
 const FreeBetMissions = () => {
   const [activeMission, setActiveMission] = useState<number | null>(null);
   const [activePopupMission, setActivePopupMission] = useState<number | null>(null);
-  const [hasDeposited, setHasDeposited] = useState<boolean | null>(null); // ❗ utilisé pour bloquer l'accès à Mission 1
+  const [hasDeposited, setHasDeposited] = useState<boolean>(false);
+  const [depositAmount, setDepositAmount] = useState<number | undefined>(undefined);
 
   const [invitedCount, setInvitedCount] = useState<number>(0);
   const [totalCashback, setTotalCashback] = useState<number>(0);
@@ -45,6 +44,7 @@ const FreeBetMissions = () => {
         });
         const data = await res.json();
         setHasDeposited(data.hasDeposited);
+        setDepositAmount(data.depositAmount); // ✅
       } catch (err) {
         console.error("❌ Erreur lors de la récupération du statut de dépôt :", err);
       }
@@ -119,8 +119,11 @@ const FreeBetMissions = () => {
         <Mission1
           onBack={() => setActiveMission(null)}
           onCollect={() => setActivePopupMission(1)}
+          hasDeposited={hasDeposited}
+          depositAmount={depositAmount}
         />
       )}
+
       {activeMission === 2 && (
         <Mission2
           onBack={() => setActiveMission(null)}
@@ -140,6 +143,7 @@ const FreeBetMissions = () => {
           }}
         />
       )}
+
       {activePopupMission === 2 && (
         <PopupMission2
           onClose={() => {
