@@ -54,14 +54,23 @@ const Mission1: React.FC<Mission1Props> = ({
 
     console.log("📨 Status HTTP:", res.status);
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("❌ Erreur HTTP deposit-status :", errorText);
-      setLoading(false); // ✅ obligatoire
+    let data = null;
+
+    try {
+      data = await res.json();
+    } catch (parseErr) {
+      const text = await res.text(); // fallback si ce n’est pas du JSON
+      console.error("❌ Réponse non JSON :", text);
+      setLoading(false);
       return false;
     }
 
-    const data = await res.json();
+    if (!res.ok) {
+      console.error("❌ Erreur HTTP deposit-status :", data);
+      setLoading(false);
+      return false;
+    }
+
     console.log("🎯 Résultat deposit-status :", data);
 
     if (data?.hasDeposited && typeof data.depositAmount === "number") {
@@ -72,12 +81,13 @@ const Mission1: React.FC<Mission1Props> = ({
     }
   } catch (err) {
     console.error("❌ Exception fetchDeposit:", err);
-    setLoading(false); // ✅ obligatoire
+    setLoading(false);
   }
 
-  setLoading(false); // ✅ si data non conforme
+  setLoading(false);
   return false;
 };
+
 
 
     // ⏱️ 1. Fetch immédiat puis retries
