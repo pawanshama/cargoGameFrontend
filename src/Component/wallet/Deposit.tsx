@@ -80,6 +80,11 @@ const Deposit: React.FC<DepositProps> = ({ refreshWallet }) => {
       return alert("Invalid amount");
     }
 
+    const playSound = () => {
+      const audio = new Audio("/assets/sounds/10.Moneyadded.mp3");
+      audio.play().catch((err) => console.error("❌ Audio error:", err));
+    };
+
     try {
       await tonConnectUI.sendTransaction({
         validUntil: Math.floor(Date.now() / 1000) + 300,
@@ -91,15 +96,17 @@ const Deposit: React.FC<DepositProps> = ({ refreshWallet }) => {
         ],
       });
 
-      setStatus("✅ Transaction envoyée, en attente de confirmation...");
+      playSound(); // 🔊 Jouer le son
+
+      setStatus("✅ Transaction sent, awaiting confirmation...");
 
       setTimeout(() => {
         refreshWallet();
-        setStatus("✅ Dépôt en cours de traitement !");
+        setStatus("✅ Deposit is being processed!");
       }, 3000);
     } catch (err) {
       console.error("❌ Deposit error:", err);
-      setStatus("❌ Erreur lors de l'envoi de la transaction.");
+      setStatus("❌ Error while sending the transaction.");
     }
   };
 

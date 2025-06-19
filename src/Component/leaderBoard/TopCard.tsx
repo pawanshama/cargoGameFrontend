@@ -7,7 +7,8 @@ interface TopCardProps {
   title: string;
   amount: number;
   isLast?: boolean;
-  current: number
+  current: number;
+  isCurrentUser?: boolean;
 }
 
 const formatPrice = (price: number): string => {
@@ -25,7 +26,7 @@ const TopThreeCard: React.FC<{
   title: string;
   amount: number;
   current: number;
-}> = ({ rank, profilePic, title, amount, current }) => (
+}> = ({ rank, profilePic, title, amount }) => (
   <div
     className={`flex flex-col gap-[.625rem] items-center w-full ${
       rank === 2 ? "-order-1" : ""
@@ -55,12 +56,12 @@ const TopThreeCard: React.FC<{
           src={profilePic}
           alt="ProfilePic"
           loading="lazy"
-          className="w-full"
+          className="w-full rounded-full"
         />
       </div>
     </div>
     <div className="flex flex-col justify-center items-center gap-0.5">
-      <h5 className="text-white text">{title} {current === rank && '(you)'}</h5>
+      <h5 className="text-white text">{title}</h5>
       <div className="flex items-center gap-0.5">
         <CurrencyLeaderBoardIcon small />
         <p className="text-primary text">{formatPrice(amount)}</p>
@@ -75,21 +76,38 @@ const OtherRankCard: React.FC<{
   title: string;
   amount: number;
   isLast?: boolean;
-  current: number
-}> = ({ rank, profilePic, title, amount, isLast, current }) => (
+  current: number;
+  isCurrentUser?: boolean;
+}> = ({ rank, profilePic, title, amount, isLast, isCurrentUser }) => (
   <>
-    <div className="flex gap-4 items-center py-2">
+    <div
+      className={`relative flex gap-4 items-center py-3 px-4 rounded-xl transition-all duration-300 ${
+        isCurrentUser
+          ? "bg-gradient-to-r from-purple-900 to-purple-700 border border-purple-400 shadow-lg"
+          : ""
+      }`}
+    >
+      {/* Badge YOU */}
+      {isCurrentUser && (
+        <span className="absolute top-[-8px] right-[-8px] bg-[#2CFD95] text-black text-xs font-bold px-2 py-[2px] rounded-full shadow-md">
+  YOU
+</span>
+      )}
+
+      {/* Avatar */}
       <div className="w-[2.625rem] h-[2.625rem]">
         <img
           src={profilePic}
           alt="ProfilePic"
           loading="lazy"
-          className="w-full"
+          className="w-full rounded-full"
         />
       </div>
+
+      {/* Info joueur */}
       <div className="flex flex-col gap-1 w-full flex-1">
         <div className="flex items-center justify-between gap-3 w-full">
-          <h5 className="text-white text">{title} {current === rank && '(you)'}</h5>
+          <h5 className="text-white text">{title}</h5>
         </div>
         <div className="flex items-center gap-1">
           <CurrencyLeaderBoardIcon />
@@ -99,11 +117,14 @@ const OtherRankCard: React.FC<{
           </div>
         </div>
       </div>
+
+      {/* Rang */}
       <h3 className="font-designer text-2xl leading-[1.125rem] text-white text-center">
         {rank}
         <span className="text-[.8125rem] leading-6">th</span>
       </h3>
     </div>
+
     {!isLast && <div className="w-full stroke h-[.0625rem]"></div>}
   </>
 );
@@ -114,7 +135,8 @@ const TopCard: React.FC<TopCardProps> = ({
   title,
   amount,
   isLast,
-  current
+  current,
+  isCurrentUser,
 }) => {
   return (
     <>
@@ -134,7 +156,7 @@ const TopCard: React.FC<TopCardProps> = ({
           amount={amount}
           isLast={isLast}
           current={current}
-
+          isCurrentUser={isCurrentUser}
         />
       )}
     </>
