@@ -90,35 +90,54 @@ const ProgressCircle: React.FC<ProgressCircleProps> = ({
 };
 
 const OnBoarding = () => {
-  const [percent] = useState(25);
+  const [percent, setPercent] = useState(0);
+  const [startTime] = useState(Date.now()); // ⏱️ Pour garantir min 1.5s
   const navigate = useNavigate();
   const { isAuthenticated, token, refreshToken, userDetails } = useAppSelector(authDataSelector);
 
+  // 🔁 Progression fluide du cercle jusqu'à 90%
   useEffect(() => {
-  const initTelegram = async () => {
-    const { WebApp } = window.Telegram;
-    WebApp.ready();
-    console.log("✅ Telegram ready, InitData:", WebApp.initData);
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 1;
+      if (progress <= 90) setPercent(progress);
+    }, 15); // vitesse fluide
+    return () => clearInterval(interval);
+  }, []);
 
-    // Tu peux traiter WebApp.initData ici si besoin
-  };
-
-  if (window.Telegram) {
-    initTelegram();
-  } else {
-    console.error("Telegram WebApp is not disponible");
-  }
-}, []);
-
+  // ✅ Quand données backend prêtes, attendre minimum 1.5s puis redirect
   useEffect(() => {
-    localStorage.clear();
-    if (isAuthenticated && userDetails) {
+    const ready = isAuthenticated && userDetails;
+    if (!ready) return;
+
+    const elapsed = Date.now() - startTime;
+    const minDuration = 1500;
+    const delay = Math.max(0, minDuration - elapsed);
+
+    setTimeout(() => {
+      setPercent(100);
+      localStorage.clear();
       localStorage.setItem("token", token);
       localStorage.setItem("refreshToken", refreshToken);
       localStorage.setItem("userDetails", userDetails);
       navigate("/bet");
-    }
+    }, delay);
   }, [isAuthenticated, userDetails]);
+
+  // ✅ Initialisation Telegram WebApp
+  useEffect(() => {
+    const initTelegram = async () => {
+      const { WebApp } = window.Telegram;
+      WebApp.ready();
+      console.log("✅ Telegram ready, InitData:", WebApp.initData);
+    };
+
+    if (window.Telegram) {
+      initTelegram();
+    } else {
+      console.error("Telegram WebApp is not disponible");
+    }
+  }, []);
 
   return (
     <div className="w-full h-[100dvh] relative flex flex-col items-center justify-center">
@@ -135,5 +154,6 @@ const OnBoarding = () => {
     </div>
   );
 };
+
 
 export default OnBoarding;
