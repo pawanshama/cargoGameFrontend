@@ -98,7 +98,7 @@ const FreeBetMissions = () => {
             }}
           >
             <div className="flex items-center gap-3">
-              <img src="/assets/rocket.png" alt="rocket" className="w-10 h-10" />
+              <img src="/assets/rocket.webp" alt="rocket" className="w-10 h-10" />
               <div className="flex flex-col leading-snug">
                 <p className="text-white text-[13px] font-bold font-designer uppercase tracking-wide">
                   MISSION {mission.id}
