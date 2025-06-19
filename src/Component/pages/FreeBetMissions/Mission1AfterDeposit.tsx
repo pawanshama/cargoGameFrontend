@@ -1,5 +1,6 @@
 import React from "react";
 import Button from "../../common/Button";
+import { formatFreeBet } from "../../../utils/format-freebet";
 
 interface Mission1AfterDepositProps {
   onBack: () => void;
@@ -65,8 +66,9 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex flex-col items-center leading-tight text-center w-[20%]">
                   <span className="text-[11px] text-white mb-[2px]">Bet</span>
-                  <span className="text-[14px] font-bold">${(depositAmount / 500).toFixed(0)}</span>
-                  <span className="text-[#00FFB2] mt-[4px] text-[11px]">Get ${(depositAmount / 500).toFixed(0)} Free Bet</span>
+                  <span className="text-[14px] font-bold">${formatFreeBet(depositAmount / 500)}</span>
+                  <span className="text-[#00FFB2] mt-[4px] text-[11px]">Get {formatFreeBet(depositAmount / 500)} Free Bet</span>
+
 
                 </div>
               ))}
