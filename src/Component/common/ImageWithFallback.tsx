@@ -1,23 +1,31 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface ImgWithFallbackProps {
   src: string;
   fallback: string;
-  alt: string;
-  [key: string]: any;
+  alt?: string;
+  className?: string;
+  loading?: "lazy" | "eager";
 }
 
 const ImgWithFallback: React.FC<ImgWithFallbackProps> = ({
   src,
   fallback,
-  alt,
-  ...delegated
+  alt = "",
+  className = "",
+  loading = "lazy",
 }) => {
+  const [imgSrc, setImgSrc] = useState(src);
+
   return (
-    <picture>
-      <source srcSet={src} type="image/webp" />
-      <img src={fallback} alt={alt} {...delegated} />
-    </picture>
+    <img
+      src={imgSrc}
+      onError={() => setImgSrc(fallback)}
+      alt={alt}
+      className={className}
+      loading={loading}
+      decoding="async"
+    />
   );
 };
 
