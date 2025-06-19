@@ -15,6 +15,8 @@ const PopupMission1: React.FC<PopupMission1Props> = ({ onClose, rewardAmount = 2
     audio.play();
   };
 
+  
+
   return (
     <div className="fixed inset-0 z-50 bg-[#160028]/90 flex items-center justify-center">
       {/* 💰 ANIMATION DES PIÈCES */}

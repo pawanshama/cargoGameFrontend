@@ -8,6 +8,12 @@ interface Mission1AfterDepositProps {
   depositAmount: number; // 💰 montant du dépôt passé en prop
 }
 
+
+  const playCollectSound = () => {
+    const audio = new Audio("/assets/sounds/10.Moneyadded.mp3");
+    audio.play().catch((err) => console.error("❌ Audio error:", err));
+  };
+
 const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
   onBack,
   onCollect,
@@ -75,7 +81,15 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
             </div>
 
             <div className="mt-4">
-              <Button label="Collect" type="button" handleButtonClick={onCollect} />
+              <Button
+  label="Collect"
+  type="button"
+  handleButtonClick={() => {
+    playCollectSound(); // 👈 joue le son
+    onCollect();        // 👈 continue l’action
+  }}
+/>
+
             </div>
           </div>
         </div>

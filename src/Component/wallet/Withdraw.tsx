@@ -11,6 +11,17 @@ interface WithdrawProps {
   refreshWallet: () => void;
 }
 
+
+let isPlaying = false;
+const playwithdrawSound = () => {
+  if (isPlaying) return;
+  isPlaying = true;
+  const audio = new Audio("/assets/sounds/23.withdraw.mp3");
+  audio.play()
+    .catch((err) => console.error("❌ Audio error:", err))
+    .finally(() => setTimeout(() => { isPlaying = false }, 1000));
+};
+
 const Withdraw: React.FC<WithdrawProps> = ({
   inputValues,
   handleInputChange,
@@ -78,8 +89,6 @@ const Withdraw: React.FC<WithdrawProps> = ({
 
       if (response.ok && result.success) {
         // 🔊 Jouer le son de retrait
-        const audio = new Audio("/assets/sounds/23.withdraw.mp3");
-        audio.play().catch((err) => console.error("❌ Audio error:", err));
 
         setStatusMessage("✅ Withdraw request sent successfully.");
         refreshWallet();
@@ -142,11 +151,15 @@ const Withdraw: React.FC<WithdrawProps> = ({
 
       <div className="flex flex-col items-center justify-center gap-2">
         <Button
-          label={loading ? "Processing..." : "Withdraw"}
-          handleButtonClick={handleWithdrawSubmit}
-          type="button"
-          disabled={loading}
-        />
+  label={loading ? "Processing..." : "Withdraw"}
+  handleButtonClick={() => {
+    playwithdrawSound();         // 🔊 joue le son
+    handleWithdrawSubmit();     // 🚀 lance la requête
+  }}
+  type="button"
+  disabled={loading}
+/>
+
         {statusMessage && (
           <p className="text-sm text-white text-center">{statusMessage}</p>
         )}
