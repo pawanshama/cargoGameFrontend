@@ -54,28 +54,27 @@ const Mission1: React.FC<Mission1Props> = ({
 
     console.log("📨 Status HTTP:", res.status);
 
-    let data = null;
+    const contentType = res.headers.get("content-type");
 
-    try {
-      data = await res.json();
-    } catch (parseErr) {
-      const text = await res.text(); // fallback si ce n’est pas du JSON
-      console.error("❌ Réponse non JSON :", text);
-      setLoading(false);
-      return false;
+    let body: any;
+
+    if (contentType && contentType.includes("application/json")) {
+      body = await res.json();
+    } else {
+      body = await res.text();
     }
 
     if (!res.ok) {
-      console.error("❌ Erreur HTTP deposit-status :", data);
+      console.error("❌ Erreur HTTP deposit-status :", body);
       setLoading(false);
       return false;
     }
 
-    console.log("🎯 Résultat deposit-status :", data);
+    console.log("🎯 Résultat deposit-status :", body);
 
-    if (data?.hasDeposited && typeof data.depositAmount === "number") {
+    if (body?.hasDeposited && typeof body.depositAmount === "number") {
       setHasDeposited(true);
-      setDepositAmount(data.depositAmount);
+      setDepositAmount(body.depositAmount);
       setLoading(false);
       return true;
     }
@@ -87,6 +86,7 @@ const Mission1: React.FC<Mission1Props> = ({
   setLoading(false);
   return false;
 };
+
 
 
 
