@@ -47,13 +47,13 @@ const IncrementDecrementInput: React.FC<IncrementDecrementInputProps> = ({
   const handleSuggestionClick = (suggestion: number) => {
     console.log(`[Suggestion] Clicked on ${suggestion}`);
     if (pressedSuggestion !== null) return;
-    setValue((prev) => prev + suggestion);
+    setValue((prev) => parseFloat((prev + suggestion).toFixed(2)));
     setPressedSuggestion(suggestion);
     if (onAmountClick) onAmountClick();
     setTimeout(() => setPressedSuggestion(null), 100);
   };
 
-  const formatCurrency = (num: number) => `$${num.toFixed(2)}`;
+  const formatCurrency = (num: number) => `$${num}`;
 
   useEffect(() => {
     if (onAmountChange) onAmountChange(value);
