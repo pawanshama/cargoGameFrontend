@@ -97,13 +97,15 @@ const Bet = () => {
       console.log("📨 Message reçu depuis l'iframe :", event.data);
       setShowGame(false);
       setGameUrl(null);
-      setMatchResult(null); // ✅ reset safe
+      setMatchResult(null);
+      setIsLoading(false); // ✅ Ajoute ça
     }
   };
 
   window.addEventListener("message", handler);
   return () => window.removeEventListener("message", handler);
 }, []);
+
 
 
   const handleRadioChange = (selectedId: string) => {

@@ -83,16 +83,21 @@ function AppRoutes() {
 
 
     useEffect(() => {
-    const handler = (event: MessageEvent) => {
-      if (event.data?.action === "goToMainScreen") {
-        console.log("📨 Message reçu depuis l'iframe :", event.data);
-        navigate("/bet"); // Redirige vers ton écran principal
-      }
-    };
+  const handler = (event: MessageEvent) => {
+    if (event.data?.action === "goToMainScreen") {
+      console.log("📨 Message reçu depuis l'iframe :", event.data);
 
-    window.addEventListener("message", handler);
-    return () => window.removeEventListener("message", handler);
-  }, [navigate]);
+      // 🔐 Évite de rediriger si on est déjà sur /bet
+      if (location.pathname !== "/bet") {
+        navigate("/bet");
+      }
+    }
+  };
+
+  window.addEventListener("message", handler);
+  return () => window.removeEventListener("message", handler);
+}, [navigate, location.pathname]);
+
 
 
   return (
