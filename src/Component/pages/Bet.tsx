@@ -44,8 +44,7 @@ const Bet = () => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipX, setTooltipX] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-    const [resetKey, setResetKey] = useState(0);
-  const [showUI, setShowUI] = useState(true); // NEW
+
 
 
   const suggestions = useMemo(() => [1, 5, 25, 100, 500], []);
@@ -71,23 +70,7 @@ const Bet = () => {
       }
     }, 100);
 
-     const reloadOnResume = () => {
-      console.log("[Telegram] Resume → React reset + reflow");
-      setShowUI(false);
-      setResetKey(prev => prev + 1);
-      setMultiplier(1);
-      setAmount(0);
 
-      setTimeout(() => {
-        setShowUI(true);
-      }, 50);
-    };
-    window.Telegram?.WebApp?.onEvent("resume", reloadOnResume);
-
-    return () => {
-      clearInterval(readyInterval);
-      window.Telegram?.WebApp?.offEvent("resume", reloadOnResume);
-    };
   }, []);
 
 
@@ -212,9 +195,7 @@ if (showGame && gameUrl) {
 
 
 
-
-   
-  return (
+ return (
     <>
       <div className="w-full bet-bg h-[100dvh]">
         <Header pageHeading="" />
