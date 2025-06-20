@@ -213,7 +213,8 @@ if (showGame && gameUrl) {
 
 
 
-    return (
+   
+  return (
     <>
       <div className="w-full bet-bg h-[100dvh]">
         <Header pageHeading="" />
@@ -239,14 +240,14 @@ if (showGame && gameUrl) {
               src={CorgiOptimised}
               fallback={Corgi}
               alt="corgi-with-shadow"
-              loading="lazy"
+              loading="eager"
               className="object-contain w-full h-[9.05rem]"
             />
           </div>
 
           <div className="p-2 mt-[-1.7375rem] flex flex-col gap-[.625rem] rounded-2xl backdrop-blur-[.4375rem] bg-[rgba(45,30,99,0.10)]">
-            <div className="flex justify-between gap-2 items-start">
-              <div className="flex flex-col gap-2 mb-3">
+            <div className="flex items-start gap-4 w-full">
+              <div className="flex flex-col gap-2 flex-1 min-w-0">
                 <p className="text-sm text-white font-medium">Choose your bet source:</p>
                 <div className="flex items-center gap-2">
                   <DynamicRadio
@@ -264,93 +265,76 @@ if (showGame && gameUrl) {
                     onChange={handleRadioChange}
                   />
                 </div>
+
+                <div className="w-full mt-3">
+                  <IncrementDecrementInput
+                    suggestions={suggestions}
+                    onAmountClick={handleAmountClick}
+                    onAmountChange={setAmount}
+                  />
+                </div>
               </div>
 
-              <div className="flex flex-col items-center justify-center text-center" style={{ transform: "translateX(-16px)" }}>
-                <p className="textSmall text-white">Balance Available</p>
-                <p className="text-base text-white font-black leading-4">
-                  $0.00 <span className="text-xs font-normal">USD</span>
-                </p>
-                <p className="text-xs text-white font-normal">
-                  {selectedRadio === "ton" && "0 TON"}
-                  {selectedRadio === "free-bet" && "Free Bets"}
-                  {selectedRadio === "play-demo" && "Demo Mode"}
-                </p>
+              <div className="flex flex-col gap-2 items-start max-w-[10rem] self-start shrink-0">
+                <div className="px-5 py-1 rounded-xl border border-white/20 bg-white/10 backdrop-blur-md text-center text-white mb-1 w-full">
+                  <p className="text-[0.65rem] text-white/70 mb-[0.15rem] leading-tight">Balance Available</p>
+                  <p className="text-base font-extrabold leading-none">
+                    $0.00 <span className="text-xs font-normal text-white/70">USD</span>
+                  </p>
+                  <p className="text-[0.6rem] text-white/60 leading-tight mt-[0.15rem]">
+                    {selectedRadio === "ton" && "0 TON"}
+                    {selectedRadio === "free-bet" && "Free Bets"}
+                    {selectedRadio === "play-demo" && "Demo Mode"}
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  label="Bet"
+                  additionalClass="animate-pulse-zoom !px-3 h-[3.75rem] w-full text-center justify-center rounded-xl transition-transform duration-100 active:scale-95"
+                  handleButtonClick={handleLaunchGame}
+                />
+
+                <PotentialWinnings amount={amount} multiplier={multiplier} />
               </div>
             </div>
 
-            <div className="flex flex-col gap-4">
-              <div className="flex items-start gap-4">
-                <div className="flex-1 max-w-[70%]">
-                  {showUI && (
-                    <IncrementDecrementInput
-                      key={resetKey}
-                      suggestions={suggestions}
-                      onAmountClick={handleAmountClick}
-                      onAmountChange={(value) => setAmount(value)}
-                    />
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-2 items-start">
-                  <Button
-                    type="button"
-                    label="Bet"
-                    additionalClass="!px-3 h-[3.75rem] w-full text-center justify-center max-w-[10rem] mt-[-0.01rem] rounded-xl transition-transform duration-100 active:scale-95"
-                    handleButtonClick={handleLaunchGame}
-                  />
-                  {showUI && (
-                    <PotentialWinnings
-                      key={resetKey}
-                      amount={amount}
-                      multiplier={multiplier}
-                    />
-                  )}
-                </div>
-              </div>
-
-              <div className="-mt-2 px-2 flex items-center gap-3">
-                {showUI && (
-                  <div className="relative w-full max-w-[85%]" key={resetKey}>
-                    <input
-                      type="range"
-                      min="1"
-                      max="10"
-                      step="0.1"
-                      value={multiplier}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value);
-                        setMultiplier(value);
-                        const percent = ((value - 1) / 9) * 100;
-                        setTooltipX(percent);
-                      }}
-                      onMouseDown={() => setShowTooltip(true)}
-                      onMouseUp={() => setShowTooltip(false)}
-                      onTouchStart={() => setShowTooltip(true)}
-                      onTouchEnd={() => setShowTooltip(false)}
-                      className="w-full appearance-none bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full cursor-pointer"
-                    />
-                    {showTooltip && (
-                      <div
-                        className="absolute -top-7 transform -translate-x-1/2 px-2 py-1 bg-white text-black text-xs font-bold rounded shadow pointer-events-none"
-                        style={{ left: `calc(${tooltipX}% - 8px)` }}
-                      >
-                        x{multiplier.toFixed(1)}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {showUI && (
-                  <div className="px-3 py-[0.375rem] rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-bold shadow-md">
+            <div className="-mt-2 px-2 py-1 flex items-center gap-3">
+              <div className="relative w-full max-w-[85%]">
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  step="0.1"
+                  value={multiplier}
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value);
+                    setMultiplier(value);
+                    const percent = ((value - 1) / 9) * 100;
+                    setTooltipX(percent);
+                  }}
+                  onMouseDown={() => setShowTooltip(true)}
+                  onMouseUp={() => setShowTooltip(false)}
+                  onTouchStart={() => setShowTooltip(true)}
+                  onTouchEnd={() => setShowTooltip(false)}
+                  className="w-full appearance-none bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full cursor-pointer"
+                />
+                {showTooltip && (
+                  <div
+                    className="absolute -top-7 transform -translate-x-1/2 px-2 py-1 bg-white text-black text-xs font-bold rounded shadow pointer-events-none"
+                    style={{ left: `calc(${tooltipX}% - 8px)` }}
+                  >
                     x{multiplier.toFixed(1)}
                   </div>
                 )}
               </div>
+
+              <div className="px-3 py-[0.375rem] rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-bold shadow-md">
+                x{multiplier.toFixed(1)}
+              </div>
             </div>
           </div>
         </div>
-
         <Footer />
       </div>
 
