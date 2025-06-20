@@ -88,7 +88,7 @@ const IncrementDecrementInput: React.FC<IncrementDecrementInputProps> = ({
       <div className="flex items-center gap-2 justify-between py-1 w-full">
         <button
           onClick={decrement}
-          className={`w-10 h-10 rounded-full flex items-center justify-center border border-primary bg-primary shadow-[0px_2px_6px_0px_rgba(0,0,0,0.55)_inset] transition-transform duration-100 will-change-transform ${
+          className={`w-10 h-10 rounded-full flex items-center justify-center border border-primary bg-primary shadow-[0px_2px_6px_0px_rgba(0,0,0,0.55)_inset] transition-transform duration-100 ${
             isDecrementPressed ? "scale-90" : "scale-100"
           }`}
         >
@@ -104,7 +104,7 @@ const IncrementDecrementInput: React.FC<IncrementDecrementInputProps> = ({
 
         <button
           onClick={increment}
-          className={`w-10 h-10 rounded-full flex items-center justify-center border border-primary bg-primary shadow-[0px_2px_6px_0px_rgba(0,0,0,0.55)_inset] transition-transform duration-100 will-change-transform ${
+          className={`w-10 h-10 rounded-full flex items-center justify-center border border-primary bg-primary shadow-[0px_2px_6px_0px_rgba(0,0,0,0.55)_inset] transition-transform duration-100 ${
             isIncrementPressed ? "scale-90" : "scale-100"
           }`}
         >
@@ -119,10 +119,9 @@ const IncrementDecrementInput: React.FC<IncrementDecrementInputProps> = ({
           <button
             key={`suggestion-${suggestion}`}
             onClick={() => handleSuggestionClick(suggestion)}
-            className={`w-[72px] h-[40px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.45)_inset] border border-secondary bg-gradient-to-b from-[#9752B8] to-[#613693] text-white rounded-2xl buttonFont text-sm flex items-center justify-center transition-transform duration-100 will-change-transform ${
-  pressedSuggestion === suggestion ? "scale-90" : "scale-100"
-}`}
-
+            className={`p-2 shadow-[0px_2px_2px_0px_rgba(0,0,0,0.45)_inset] border border-secondary bg-gradient-to-b from-[#9752B8] to-[#613693] text-white rounded-2xl buttonFont text-[clamp(10px,5vw,16px)] flex items-center justify-center transition-transform duration-100 ${
+              pressedSuggestion === suggestion ? "scale-90" : "scale-100"
+            }`}
           >
             {formatCurrency(suggestion)}
           </button>
@@ -130,6 +129,7 @@ const IncrementDecrementInput: React.FC<IncrementDecrementInputProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default IncrementDecrementInput;
+
