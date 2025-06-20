@@ -142,9 +142,11 @@ if (!token) {
 // 🕹️ Injection du token dans l'URL du jeu
 const url = new URL("https://corgi-game-dist.vercel.app/");
 url.searchParams.set("token", token);
-console.log("🎯 Token injecté dans l'iframe :", url.toString());
+url.searchParams.set("initData", encodeURIComponent(initData)); // ✅ injecte aussi initData
+console.log("🎯 Token + initData injectés dans l'iframe :", url.toString());
 
 setGameUrl(url.toString());
+
 setShowGame(true);
 
   } catch (error) {
