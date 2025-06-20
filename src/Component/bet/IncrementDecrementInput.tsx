@@ -119,9 +119,10 @@ const IncrementDecrementInput: React.FC<IncrementDecrementInputProps> = ({
           <button
             key={`suggestion-${suggestion}`}
             onClick={() => handleSuggestionClick(suggestion)}
-            className={`w-[72px] h-[40px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.45)_inset] border border-secondary bg-gradient-to-b from-[#9752B8] to-[#613693] text-white rounded-2xl buttonFont text-sm flex items-center justify-center transition-transform duration-100 will-change-transform ${
+            className={`w-[72px] h-[40px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.45)_inset] border border-secondary bg-gradient-to-b from-[#9752B8] to-[#613693] text-white rounded-2xl buttonFont text-lg flex items-center justify-center transition-transform duration-100 will-change-transform ${
   pressedSuggestion === suggestion ? "scale-90" : "scale-100"
 }`}
+
 
           >
             {formatCurrency(suggestion)}

@@ -13,18 +13,16 @@ import ImgWithFallback from "../common/ImageWithFallback";
 import useTelegramSafeSound from "../../hooks/useTelegramSafeSound";
 import MatchResult from "../pages/MatchResult";
 
-const PotentialWinnings = memo(({ amount, multiplier }: { amount: number; multiplier: number }) => {
-  return (
-    <div className="px-3 py-[0.25rem] will-change-transform rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 shadow-md text-white w-full max-w-[10rem] text-center min-h-[2rem] transition-none">
-      <p className="text-[0.65rem] font-medium opacity-90 tracking-wide leading-tight pointer-events-none select-none min-h-[1rem]">
-        Potential winnings
-      </p>
-      <p className="text-sm font-bold mt-[0.15rem] min-h-[1.25rem]">
-        ${ (amount * multiplier).toFixed(2) }
-      </p>
-    </div>
-  );
-});
+const PotentialWinnings = memo(({ amount, multiplier }: { amount: number; multiplier: number }) => (
+  <div className="px-3 py-[0.25rem] rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 shadow-md text-white w-full max-w-[10rem] text-center min-h-[2rem]">
+    <p className="text-[0.65rem] font-medium opacity-90 tracking-wide leading-tight pointer-events-none select-none min-h-[1rem]">
+      Potential winnings
+    </p>
+    <p className="text-sm font-bold mt-[0.05rem] min-h-[1.25rem]">
+      ${ (amount * multiplier).toFixed(2) }
+    </p>
+  </div>
+));
 
 const Bet = () => {
   const [matchResult, setMatchResult] = useState<null | {
@@ -47,7 +45,7 @@ const Bet = () => {
 
 
 
-  const suggestions = useMemo(() => [1, 5, 25, 100, 500], []);
+  const suggestions = useMemo(() => [1, 5, 25, 100], []);
   const playSelectRadio = useTelegramSafeSound("/assets/sounds/13Select-Demofreeusdt.mp3");
   const playBetSound = useTelegramSafeSound("/assets/sounds/4Bet.mp3");
   const playAmount = useTelegramSafeSound("/assets/sounds/12Select-Amountbet.mp3");
@@ -66,11 +64,21 @@ const Bet = () => {
     const readyInterval = setInterval(() => {
       if (window.Telegram?.WebApp?.ready) {
         window.Telegram.WebApp.ready();
+         window.Telegram.WebApp.expand();
         clearInterval(readyInterval);
       }
     }, 100);
+const reloadOnResume = () => {
+      console.log("[Telegram] Resume → reset values");
+      setAmount(0);
+      setMultiplier(1);
+    };
 
-
+    window.Telegram?.WebApp?.onEvent("resume", reloadOnResume);
+    return () => {
+      clearInterval(readyInterval);
+      window.Telegram?.WebApp?.offEvent("resume", reloadOnResume);
+    };
   }, []);
 
 
