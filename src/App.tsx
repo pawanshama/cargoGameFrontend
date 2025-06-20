@@ -27,7 +27,8 @@ import useBackgroundMusic from "./hooks/useBackgroundMusic";
 
 
 
-// ✅ Gère les routes et l'envoi de l'utilisateur au backend
+
+
 function AppRoutes() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,70 +36,82 @@ function AppRoutes() {
   const [userReady, setUserReady] = useState(false);
   const { setUser } = useUser();
 
+  // ✅ Étape 1 : Récupère le code d’invitation et stocke le inviterId
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteCode = urlParams.get("invite");
+
+    if (inviteCode) {
+      axios
+        .get(`https://corgi-in-space-backend-production.up.railway.app/api/invite/${inviteCode}`)
+        .then((res) => {
+          if (res.data?.inviterId) {
+            localStorage.setItem("inviterId", res.data.inviterId);
+            console.log("✅ inviterId stocké :", res.data.inviterId);
+          }
+        })
+        .catch((err) => {
+          console.warn("❌ Code d’invitation invalide :", err);
+        });
+    }
+  }, []);
+
+  // ✅ Étape 2 : Auth Telegram + envoie inviterId
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
-
-    if (!tg) {
-      console.warn("❌ Telegram WebApp is not available");
-      return;
-    }
+    if (!tg) return console.warn("❌ Telegram WebApp not available");
 
     tg.ready();
     console.log("✅ Telegram WebApp ready");
 
     const initData = tg.initData;
-    if (!initData) {
-      console.warn("❌ initData manquant");
-      return;
-    }
+    if (!initData) return console.warn("❌ initData manquant");
+
+    const inviterId = localStorage.getItem("inviterId");
 
     axios
-      .post("https://corgi-in-space-backend-production.up.railway.app/api/auth/telegram", null, {
-        headers: {
-          Authorization: `tma ${initData}`,
-        },
-      })
+      .post(
+        "https://corgi-in-space-backend-production.up.railway.app/api/auth/telegram",
+        { inviterId }, // ⬅️ envoyer le parrain ici
+        {
+          headers: {
+            Authorization: `tma ${initData}`,
+          },
+        }
+      )
       .then((res) => {
-        console.log("✅ Utilisateur connecté :", res.data.userData);
-        setUser(res.data.userData);
-        console.log("👤 Données utilisateur stockées :", res.data.userData);
-        setUserReady(true);
-        console.log("🔓 userReady set to TRUE");
-      })
+  console.log("✅ Utilisateur connecté :", res.data.userData);
+  setUser(res.data.userData);
+  setUserReady(true);
+  localStorage.removeItem("inviterId"); // 🧹 nettoyer après usage
+})
+
       .catch((err) => {
         console.error("❌ Erreur auth Telegram :", err.response?.data || err.message);
       });
   }, []);
 
+  // ✅ Redirection automatique si connecté
   useEffect(() => {
     const shouldRedirect = location.pathname === "/" || location.pathname === "/onboarding";
-    console.log("🔁 Redirection check: userReady =", userReady, "| pathname =", location.pathname);
 
     if (!hasRedirected.current && userReady && shouldRedirect) {
       hasRedirected.current = true;
-      console.log("➡️ Redirection vers /bet");
       navigate("/bet");
     }
   }, [userReady, location, navigate]);
 
-
-    useEffect(() => {
-  const handler = (event: MessageEvent) => {
-    if (event.data?.action === "goToMainScreen") {
-      console.log("📨 Message reçu depuis l'iframe :", event.data);
-
-      // 🔐 Évite de rediriger si on est déjà sur /bet
-      if (location.pathname !== "/bet") {
+  // ✅ Réception message iframe
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.action === "goToMainScreen" && location.pathname !== "/bet") {
         navigate("/bet");
       }
-    }
-  };
+    };
 
-  window.addEventListener("message", handler);
-  return () => window.removeEventListener("message", handler);
-}, [navigate, location.pathname]);
-
-
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [navigate, location.pathname]);
 
   return (
     <Routes>
@@ -115,6 +128,7 @@ function AppRoutes() {
     </Routes>
   );
 }
+
 
 // ✅ App principale avec gestion musique
 function App() {

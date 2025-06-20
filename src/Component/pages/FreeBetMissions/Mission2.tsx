@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import Button from "../../common/Button";
 import CustomInput from "../../common/Input";
+import { useUser } from "../../context/UserContext"; // 👈 pour accéder à user
 
 interface Mission2Props {
   onBack: () => void;
@@ -18,28 +20,40 @@ const Mission2 = ({
   yourCashback,
   friendsCashback,
 }: Mission2Props) => {
+  const [inviteLink, setInviteLink] = useState("");
+  const { user } = useUser(); // ✅ récupère user
+
+  useEffect(() => {
+    const inviteCode = user?.ReferralMission?.inviteCode;
+    if (inviteCode) {
+      const link = `https://t.me/corgiinspacebot?startapp=invite=${inviteCode}`;
+      setInviteLink(link);
+    }
+  }, [user]);
+
   const handleShare = async () => {
-    const url = "https://dfjkzfnbkjzbf/...";
+    if (!inviteLink) return;
 
     if (navigator.share) {
       try {
         await navigator.share({
           title: "Corgi in Space",
           text: "Viens jouer avec moi et gagne des récompenses sur Corgi in Space !",
-          url,
+          url: inviteLink,
         });
       } catch (err) {
         console.error("Erreur lors du partage :", err);
       }
     } else {
       try {
-        await navigator.clipboard.writeText(url);
+        await navigator.clipboard.writeText(inviteLink);
         alert("Lien copié dans le presse-papiers !");
       } catch (err) {
         console.error("Échec de la copie :", err);
       }
     }
   };
+
 
   return (
     <div className="absolute inset-0 z-50 bg-[#160028] bg-opacity-95 overflow-y-auto">
@@ -107,7 +121,7 @@ const Mission2 = ({
           <div className="flex items-center gap-2 mt-2">
             <CustomInput
               type="text"
-              value="https://dfjkzfnbkjzbf/..."
+              value={inviteLink}
               name="invite-url"
               disabled
               copy
