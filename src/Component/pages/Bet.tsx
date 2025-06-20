@@ -10,55 +10,40 @@ import IncrementDecrementInput from "../bet/IncrementDecrementInput";
 import UserTable from "../bet/UserTable";
 import OnlinePlayersStats from "../bet/OnlinePlayersStats";
 import ImgWithFallback from "../common/ImageWithFallback";
+import Game from "./Game";
 import useTelegramSafeSound from "../../hooks/useTelegramSafeSound";
-import MatchResult from "../pages/MatchResult";
 
-const PotentialWinnings = memo(({ amount, multiplier }: { amount: number; multiplier: number }) => {
-  return (
-    <div className="px-3 py-[0.25rem] will-change-transform rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 shadow-md text-white w-full max-w-[10rem] text-center min-h-[2rem] transition-none">
-      <p className="text-[0.65rem] font-medium opacity-90 tracking-wide leading-tight pointer-events-none select-none min-h-[1rem]">
-        Potential winnings
-      </p>
-      <p className="text-sm font-bold mt-[0.15rem] min-h-[1.25rem]">
-        ${ (amount * multiplier).toFixed(2) }
-      </p>
-    </div>
-  );
-});
+const PotentialWinnings = memo(({ amount, multiplier }: { amount: number; multiplier: number }) => (
+  <div className="px-3 py-[0.25rem] rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 shadow-md text-white w-full max-w-[10rem] text-center min-h-[2rem]">
+    <p className="text-[0.65rem] font-medium opacity-90 tracking-wide leading-tight pointer-events-none select-none min-h-[1rem]">
+      Potential winnings
+    </p>
+    <p className="text-sm font-bold mt-[0.05rem] min-h-[1.25rem]">
+      ${ (amount * multiplier).toFixed(2) }
+    </p>
+  </div>
+));
 
 const Bet = () => {
-  const [matchResult, setMatchResult] = useState<null | {
-    result: "Won" | "Lost" | "Draw";
-    userScore: number;
-    opponentScore: number;
-    betAmount: number;
-    reward: number;
-  }>(null);
-
   const [isStatisticsShow, setIsStatisticsShow] = useState(false);
   const [selectedRadio, setSelectedRadio] = useState("ton");
   const [showGame, setShowGame] = useState(false);
-  const [gameUrl, setGameUrl] = useState<string | null>(null);
   const [multiplier, setMultiplier] = useState(1);
-  const [amount, setAmount] = useState(0.1);
+  const [amount, setAmount] = useState(0);
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipX, setTooltipX] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
 
-
-
-  const suggestions = useMemo(() => [1, 5, 25, 100, 500], []);
+  const suggestions = useMemo(() => [5, 10, 15, 20], []);
   const playSelectRadio = useTelegramSafeSound("/assets/sounds/13Select-Demofreeusdt.mp3");
   const playBetSound = useTelegramSafeSound("/assets/sounds/4Bet.mp3");
   const playAmount = useTelegramSafeSound("/assets/sounds/12Select-Amountbet.mp3");
 
-    useEffect(() => {
+  useEffect(() => {
     const VERSION = "1.0.0";
     const LAST_VERSION = localStorage.getItem("app_version");
     if (LAST_VERSION !== VERSION) {
       localStorage.setItem("app_version", VERSION);
       window.location.href = window.location.pathname + "?v=" + Date.now();
-      return;
     }
   }, []);
 
@@ -84,129 +69,23 @@ const Bet = () => {
     };
   }, []);
 
-
-  useEffect(() => {
-  const handler = (event: MessageEvent) => {
-    if (event.data?.action === "goToMainScreen") {
-      console.log("📨 Message reçu depuis l'iframe :", event.data);
-      setShowGame(false);
-      setGameUrl(null);
-      setMatchResult(null);
-      setIsLoading(false); // ✅ Ajoute ça
-    }
-  };
-
-  window.addEventListener("message", handler);
-  return () => window.removeEventListener("message", handler);
-}, []);
-
-
-
   const handleRadioChange = (selectedId: string) => {
     if (selectedId !== selectedRadio) playSelectRadio();
     setSelectedRadio(selectedId);
   };
 
-const handleLaunchGame = async () => {
-  console.log("▶️ handleLaunchGame lancé");
-  console.log("Mise :", amount);
-  if (isLoading || amount < 0.1) {
-    console.warn("⛔ Mise invalide ou chargement en cours");
-    return;
-  }
-
-  try {
-    setIsLoading(true);
+  const handleLaunchGame = () => {
     playBetSound();
+    setTimeout(() => setShowGame(true), 150);
+  };
 
-    const initData = window.Telegram?.WebApp?.initData;
-    if (!initData) throw new Error("initData non trouvé");
+  const handleAmountClick = () => {
+    playAmount();
+  };
 
-    // Appel sécurisé : /match/start
-// 🎯 Appel sécurisé à /match/start
-const tokenRes = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/match/start", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `tma ${initData}`, // Toujours initData ici
-  },
-  body: JSON.stringify({
-    betAmount: amount, // La mise uniquement (le backend génère matchId, poolId, etc.)
-  }),
-});
+  if (showGame) return <Game />;
 
-// 🧪 Vérifie la réponse HTTP
-if (!tokenRes.ok) {
-  const text = await tokenRes.text();
-  throw new Error(`Erreur HTTP ${tokenRes.status} : ${text}`);
-}
-
-// ✅ Récupère et vérifie le token
-const resJson = await tokenRes.json();
-console.log("📡 Réponse du backend /match/start :", resJson);
-
-const { matchToken: token } = resJson;
-
-if (!token) {
-  throw new Error("❌ Token manquant dans la réponse backend");
-}
-
-// 🕹️ Injection du token dans l'URL du jeu
-const url = new URL("https://corgi-game-dist.vercel.app/");
-url.searchParams.set("token", token);
-url.searchParams.set("initData", encodeURIComponent(initData)); // ✅ injecte aussi initData
-console.log("🎯 Token + initData injectés dans l'iframe :", url.toString());
-
-setGameUrl(url.toString());
-
-setShowGame(true);
-
-  } catch (error) {
-    console.error("❌ Erreur pendant le matchmaking :", error);
-    setIsLoading(false);
-  }
-};
-
-
-
-  
-
-
-
-
-  const handleAmountClick = () => playAmount();
-
-  if (matchResult) {
-    return (
-      <MatchResult
-        {...matchResult}
-        onReplay={() => {
-          setMatchResult(null);
-          handleLaunchGame();
-        }}
-        onQuit={() => {
-          setMatchResult(null);
-        }}
-      />
-    );
-  }
-
-if (showGame && gameUrl) {
   return (
-    <div className="w-full h-[100dvh] overflow-hidden">
-      <iframe
-        src={gameUrl}
-        title="Corgi Game"
-        className="w-full h-full border-none"
-        allow="autoplay; fullscreen"
-      />
-    </div>
-  );
-}
-
-
-
- return (
     <>
       <div className="w-full bet-bg h-[100dvh]">
         <Header pageHeading="" />
