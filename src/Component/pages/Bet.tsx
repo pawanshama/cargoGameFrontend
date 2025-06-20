@@ -66,22 +66,11 @@ const Bet = () => {
     const readyInterval = setInterval(() => {
       if (window.Telegram?.WebApp?.ready) {
         window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
         clearInterval(readyInterval);
       }
     }, 100);
 
-    const reloadOnResume = () => {
-      console.log("[Telegram] Resume → reset values");
-      setAmount(0);
-      setMultiplier(1);
-    };
 
-    window.Telegram?.WebApp?.onEvent("resume", reloadOnResume);
-    return () => {
-      clearInterval(readyInterval);
-      window.Telegram?.WebApp?.offEvent("resume", reloadOnResume);
-    };
   }, []);
 
 
