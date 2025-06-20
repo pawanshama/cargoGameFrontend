@@ -90,6 +90,22 @@ const Bet = () => {
     };
   }, []);
 
+
+  useEffect(() => {
+  const handler = (event: MessageEvent) => {
+    if (event.data?.action === "goToMainScreen") {
+      console.log("📨 Message reçu depuis l'iframe :", event.data);
+      setShowGame(false);
+      setGameUrl(null);
+      setMatchResult(null); // ✅ reset safe
+    }
+  };
+
+  window.addEventListener("message", handler);
+  return () => window.removeEventListener("message", handler);
+}, []);
+
+
   const handleRadioChange = (selectedId: string) => {
     if (selectedId !== selectedRadio) playSelectRadio();
     setSelectedRadio(selectedId);
