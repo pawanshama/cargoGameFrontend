@@ -81,6 +81,20 @@ function AppRoutes() {
     }
   }, [userReady, location, navigate]);
 
+
+    useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.action === "goToMainScreen") {
+        console.log("📨 Message reçu depuis l'iframe :", event.data);
+        navigate("/bet"); // Redirige vers ton écran principal
+      }
+    };
+
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [navigate]);
+
+
   return (
     <Routes>
       <Route path="/" element={<OnBoarding />} />
