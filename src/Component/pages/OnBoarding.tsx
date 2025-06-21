@@ -113,15 +113,17 @@ const OnBoarding = () => {
 
   // 🔍 Récupère le code d’invitation depuis l’URL
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const inviteParam = params.get("startapp");
-    if (inviteParam?.startsWith("invite=")) {
-      const code = inviteParam.split("=")[1];
-      setInviteCode(code); // Sauvegarde du code d'invitation
-      localStorage.setItem("inviteCode", code); // ✅ stocke dans localStorage
-      console.log("✅ Invite code extrait et stocké :", code);
-    }
-  }, []);
+  const { WebApp } = window.Telegram || {};
+  const raw = WebApp?.initDataUnsafe?.start_param;
+
+  if (raw?.startsWith("invite=")) {
+    const code = raw.split("=")[1];
+    setInviteCode(code);
+    localStorage.setItem("inviteCode", code);
+    console.log("✅ Invite code extrait via initDataUnsafe :", code);
+  }
+}, []);
+
 
   // 📲 Init Telegram + appel backend avec l'inviteCode
   useEffect(() => {
