@@ -24,12 +24,15 @@ const Mission2 = ({
   const { user } = useUser(); // ✅ récupère user
 
   useEffect(() => {
-    const inviteCode = user?.ReferralMission?.inviteCode;
-    if (inviteCode) {
-      const link = `https://t.me/corgiinspacebot?startapp=invite=${inviteCode}`;
-      setInviteLink(link);
-    }
-  }, [user]);
+  const inviteCode = user?.referralMission?.inviteCode;
+  if (inviteCode) {
+    const link = `https://t.me/corgiinspacebot?startapp=invite=${inviteCode}`;
+    setInviteLink(link);
+  }
+}, [user]);
+
+
+
 
   const handleShare = async () => {
     if (!inviteLink) return;

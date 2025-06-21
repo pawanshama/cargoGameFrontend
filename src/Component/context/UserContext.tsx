@@ -15,8 +15,9 @@ interface User {
   firstName?: string;
   lastName?: string;
   email?: string;
-  ReferralMission?: ReferralMission; // ✅ ajoute ce champ
+  referralMission?: ReferralMission; // ✅ camelCase, comme dans le backend
 }
+
 
 interface UserContextType {
   user: User | null;
