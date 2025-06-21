@@ -1,4 +1,3 @@
-// ⬇️ ... tous tes imports restent inchangés
 import { useEffect, useState } from "react";
 import LogoBig from "../../assets/images/logoBig.png";
 import LogoBigOptimised from "../../assets/images/logoBig.webp";
@@ -118,27 +117,29 @@ const OnBoarding = () => {
     const inviteParam = params.get("startapp");
     if (inviteParam?.startsWith("invite=")) {
       const code = inviteParam.split("=")[1];
-      setInviteCode(code);
-      console.log("✅ Invite code extrait :", code);
+      setInviteCode(code); // Sauvegarde du code d'invitation
+      localStorage.setItem("inviteCode", code); // ✅ stocke dans localStorage
+      console.log("✅ Invite code extrait et stocké :", code);
     }
   }, []);
 
-  // 📲 Init Telegram + appel backend
+  // 📲 Init Telegram + appel backend avec l'inviteCode
   useEffect(() => {
     const initTelegram = async () => {
       const { WebApp } = window.Telegram;
       WebApp.ready();
       console.log("✅ Telegram ready, InitData:", WebApp.initData);
 
+      // Appel API avec les données Telegram et l'inviteCode
       try {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/create-or-find`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-init-data": WebApp.initData, // 🔑 Important !
+            "x-init-data": WebApp.initData, // Important !
           },
           body: JSON.stringify({
-            inviteCode: inviteCode, // ➕ Parrainage
+            inviteCode: inviteCode, // Envoie du code d'invitation
           }),
         });
 
@@ -150,9 +151,9 @@ const OnBoarding = () => {
     };
 
     if (window.Telegram && inviteCode) {
-      initTelegram();
+      initTelegram(); // Appel API avec Telegram et inviteCode
     }
-  }, [inviteCode]);
+  }, [inviteCode]); // Le hook se déclenche dès que inviteCode est disponible
 
   return (
     <div className="w-full h-[100dvh] relative flex flex-col items-center justify-center">
