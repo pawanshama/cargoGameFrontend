@@ -26,7 +26,7 @@ const Mission2 = ({
   useEffect(() => {
   const inviteCode = user?.referralMission?.inviteCode;
   if (inviteCode) {
-    const link = `https://t.me/CorginSpaceBot?startapp=invite=${inviteCode}`;
+    const link = `https://t.me/CorginSpaceBot?start=${inviteCode}`;
     setInviteLink(link);
   }
 }, [user]);
