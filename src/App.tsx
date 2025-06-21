@@ -139,7 +139,7 @@ useBackgroundMusic("/assets/sounds/21Musichome.mp3", 0.1); // 👈 ici tu ajuste
     <TonConnectUIProvider
       manifestUrl="https://corgi-in-space-front-end.vercel.app/tonconnect-manifest-v2.json"
       actionsConfiguration={{
-        twaReturnUrl: "https://t.me/corgiinspacebot",
+        twaReturnUrl: "https://t.me/CorginSpaceBot",
       }}
     >
       <UserProvider>
