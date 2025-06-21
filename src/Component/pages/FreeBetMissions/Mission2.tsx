@@ -41,7 +41,7 @@ const Mission2 = ({
       try {
         await navigator.share({
           title: "Corgi in Space",
-          text: "Viens jouer avec moi et gagne des récompenses sur Corgi in Space !",
+           text: `🚀 BET - PLAY - TAKE THE CASH – Right Now\n\nBet. Play. Withdraw.\n💸 +$200 in Free Bets for new players 🤑 .`,
           url: inviteLink,
         });
       } catch (err) {
@@ -50,9 +50,9 @@ const Mission2 = ({
     } else {
       try {
         await navigator.clipboard.writeText(inviteLink);
-        alert("Lien copié dans le presse-papiers !");
+        alert("Link Copied !");
       } catch (err) {
-        console.error("Échec de la copie :", err);
+        console.error("Copie Failed :", err);
       }
     }
   };

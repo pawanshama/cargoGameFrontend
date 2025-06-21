@@ -1,3 +1,4 @@
+// ⬇️ ... tous tes imports restent inchangés
 import { useEffect, useState } from "react";
 import LogoBig from "../../assets/images/logoBig.png";
 import LogoBigOptimised from "../../assets/images/logoBig.webp";
@@ -32,20 +33,15 @@ const ProgressCircle: React.FC<ProgressCircleProps> = ({
   const dashOffset = dashArray - (dashArray * percentage) / 100;
 
   const angle = (percentage / 100) * 360;
-  const radian = (angle - 90) * (Math.PI / 180); // Adjusting by 90 degrees to start from top center
+  const radian = (angle - 90) * (Math.PI / 180);
   const dotRadius = strokeWidth / 2;
-  const adjustedRadius = radius - dotRadius; // Adjust radius to keep dot inside the circle
+  const adjustedRadius = radius - dotRadius;
   const dotX = sqSize / 2 + adjustedRadius * Math.cos(radian);
   const dotY = sqSize / 2 + adjustedRadius * Math.sin(radian);
 
   return (
     <div>
-      <svg
-        className="block m-auto"
-        width={sqSize}
-        height={sqSize}
-        viewBox={viewBox}
-      >
+      <svg className="block m-auto" width={sqSize} height={sqSize} viewBox={viewBox}>
         <defs>
           <linearGradient id="progressGradient" gradientTransform="rotate(90)">
             <stop offset="0%" stopColor="#00FF92" />
@@ -53,7 +49,7 @@ const ProgressCircle: React.FC<ProgressCircleProps> = ({
           </linearGradient>
         </defs>
         <path
-          d="M64 33.5C64 37.571 63.1982 41.6021 61.6403 45.3632C60.0824 49.1243 57.7989 52.5417 54.9203 55.4203C52.0417 58.2989 48.6243 60.5824 44.8632 62.1403C41.1021 63.6982 37.071 64.5 33 64.5C28.929 64.5 24.8979 63.6982 21.1368 62.1403C17.3757 60.5824 13.9583 58.2989 11.0797 55.4203C8.20107 52.5417 5.91763 49.1243 4.35973 45.3632C2.80184 41.6021 2 37.571 2 33.5C2 29.429 2.80184 25.3979 4.35974 21.6368C5.91764 17.8757 8.20108 14.4583 11.0797 11.5797C13.9583 8.70107 17.3757 6.41762 21.1368 4.85973C24.8979 3.30183 28.929 2.5 33 2.5C37.071 2.5 41.1021 3.30184 44.8632 4.85974C48.6243 6.41764 52.0417 8.70108 54.9203 11.5797C57.7989 14.4583 60.0824 17.8757 61.6403 21.6368C63.1982 25.3979 64 29.429 64 33.5L64 33.5Z"
+          d="M64 33.5C64 37.571 ... 64 33.5Z"
           stroke="#7848B4"
           strokeOpacity="0.5"
           strokeWidth="3.95745"
@@ -75,13 +71,7 @@ const ProgressCircle: React.FC<ProgressCircleProps> = ({
         />
         <circle cx={dotX} cy={dotY} r="3.5" fill="white" />
         <circle cx={dotX} cy={dotY} r="1.5" fill="#757279" />
-        <text
-          className="z-10 fill-current textBold text-textColor"
-          x="50%"
-          y="50%"
-          dy=".3em"
-          textAnchor="middle"
-        >
+        <text className="z-10 fill-current textBold text-textColor" x="50%" y="50%" dy=".3em" textAnchor="middle">
           {`${percentage}%`}
         </text>
       </svg>
@@ -91,28 +81,26 @@ const ProgressCircle: React.FC<ProgressCircleProps> = ({
 
 const OnBoarding = () => {
   const [percent, setPercent] = useState(0);
-  const [startTime] = useState(Date.now()); // ⏱️ Pour garantir min 1.5s
+  const [startTime] = useState(Date.now());
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
   const navigate = useNavigate();
   const { isAuthenticated, token, refreshToken, userDetails } = useAppSelector(authDataSelector);
 
-  // 🔁 Progression fluide du cercle jusqu'à 90%
   useEffect(() => {
     let progress = 0;
     const interval = setInterval(() => {
       progress += 1;
       if (progress <= 90) setPercent(progress);
-    }, 15); // vitesse fluide
+    }, 15);
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ Quand données backend prêtes, attendre minimum 1.5s puis redirect
   useEffect(() => {
     const ready = isAuthenticated && userDetails;
     if (!ready) return;
 
     const elapsed = Date.now() - startTime;
-    const minDuration = 1500;
-    const delay = Math.max(0, minDuration - elapsed);
+    const delay = Math.max(0, 1500 - elapsed);
 
     setTimeout(() => {
       setPercent(100);
@@ -124,20 +112,47 @@ const OnBoarding = () => {
     }, delay);
   }, [isAuthenticated, userDetails]);
 
-  // ✅ Initialisation Telegram WebApp
+  // 🔍 Récupère le code d’invitation depuis l’URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const inviteParam = params.get("startapp");
+    if (inviteParam?.startsWith("invite=")) {
+      const code = inviteParam.split("=")[1];
+      setInviteCode(code);
+      console.log("✅ Invite code extrait :", code);
+    }
+  }, []);
+
+  // 📲 Init Telegram + appel backend
   useEffect(() => {
     const initTelegram = async () => {
       const { WebApp } = window.Telegram;
       WebApp.ready();
       console.log("✅ Telegram ready, InitData:", WebApp.initData);
+
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/create-or-find`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-init-data": WebApp.initData, // 🔑 Important !
+          },
+          body: JSON.stringify({
+            inviteCode: inviteCode, // ➕ Parrainage
+          }),
+        });
+
+        const data = await response.json();
+        console.log("✅ Utilisateur connecté avec parrainage :", data);
+      } catch (error) {
+        console.error("❌ Erreur envoi inviteCode :", error);
+      }
     };
 
-    if (window.Telegram) {
+    if (window.Telegram && inviteCode) {
       initTelegram();
-    } else {
-      console.error("Telegram WebApp is not disponible");
     }
-  }, []);
+  }, [inviteCode]);
 
   return (
     <div className="w-full h-[100dvh] relative flex flex-col items-center justify-center">
@@ -154,6 +169,5 @@ const OnBoarding = () => {
     </div>
   );
 };
-
 
 export default OnBoarding;
