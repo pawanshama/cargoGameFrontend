@@ -134,7 +134,7 @@ const OnBoarding = () => {
 
       // Appel API avec les données Telegram et l'inviteCode
       try {
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/telegram`, {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/telegram`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
