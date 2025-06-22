@@ -1,6 +1,5 @@
-/* src/types/telegram.d.ts  (complète / remplace celle existante) */
-
-export interface TelegramInitDataUnsafe { /* … inchangé … */ }
+/* src/types/telegram.d.ts
+   — Définition complète + propriétés manquantes */
 
 export type TwaEvent =
   | "themeChanged"
@@ -12,7 +11,25 @@ export type TwaEvent =
   | "popupClosed"
   | "qrTextReceived"
   | "clipboardTextReceived"
-  | string;                        // fallback
+  | string; // fallback
+
+export interface TelegramInitDataUnsafe {
+  /** Paramètre start du bot (invite=xxx) */
+  start_param?: string;
+
+  /** Utilisateur Telegram ayant lancé le bot */
+  user?: {
+    id: number;
+    first_name: string;
+    last_name?: string;
+    username?: string;
+    language_code?: string;
+    allows_write_to_pm?: boolean;
+  };
+
+  /** autres clés non typées */
+  [key: string]: unknown;
+}
 
 export interface TelegramWebApp {
   /* --- propriétés core --- */
@@ -29,9 +46,7 @@ export interface TelegramWebApp {
   /* --- events --- */
   onEvent(type: TwaEvent, cb: (...args: any[]) => void): void;
   offEvent(type: TwaEvent, cb: (...args: any[]) => void): void;
-  sendEvent(type: TwaEvent, data?: unknown): void; // optionnel
-
-  /* … ajoute d’autres propriétés si tu les emploies … */
+  sendEvent?(type: TwaEvent, data?: unknown): void;
 }
 
 export interface TelegramGlobal {

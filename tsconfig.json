@@ -1,25 +1,41 @@
 {
   "compilerOptions": {
+    /* ---------- Cible & environnement ---------- */
     "target": "ES2020",
-    "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
+
+    /* ---------- Modules / résolution ---------- */
     "module": "ESNext",
-    "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "moduleDetection": "force",
-    "noEmit": true,
-    "jsx": "react-jsx",
+
+    /* ---------- Typage strict ---------- */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+
+    /* ---------- JSX ---------- */
+    "jsx": "react-jsx",
+    "useDefineForClassFields": true,
+
+    /* ---------- Paths / baseUrl ---------- */
     "baseUrl": "src",
     "paths": {
       "@/*": ["*"]
-    }
+    },
+
+    /* ---------- Types globaux supplémentaires ---------- */
+    "types": ["@twa-dev/types"],   // ← nécessaire pour initDataUnsafe
+
+    /* ---------- Build ---------- */
+    "noEmit": true,
+    "moduleDetection": "force"
   },
+
+  /* ---------- Fichiers pris en compte ---------- */
   "include": ["src"]
 }

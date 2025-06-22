@@ -1,5 +1,4 @@
-/* src/App.tsx
-   — version vérifiée et corrigée */
+/* src/App.tsx  — version avec traçage complet */
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -10,7 +9,6 @@ import {
   useLocation,
 } from "react-router-dom";
 import axios from "axios";
-
 import "./App.css";
 
 /* ---------- Pages ---------- */
@@ -29,14 +27,13 @@ import Privacy from "./Component/pages/Privacy";
 import { TonConnectUIProvider } from "@tonconnect/ui-react";
 import { UserProvider, useUser } from "./Component/context/UserContext";
 import useBackgroundMusic from "./hooks/useBackgroundMusic";
-// import useFullscreenOnStart from "./hooks/useFullscreenOnStart";
 
-/* ---------- Constantes ---------- */
-const API_BASE = import.meta.env.VITE_BACKEND_URL ??
+const API_BASE =
+  import.meta.env.VITE_BACKEND_URL ||
   "https://corgi-in-space-backend-production.up.railway.app";
 
 /* ========================================================================= */
-/*                               SOUS-ROUTES                                 */
+/*                               SUB-ROUTES                                  */
 /* ========================================================================= */
 
 function AppRoutes() {
@@ -45,13 +42,25 @@ function AppRoutes() {
   const { setUser } = useUser();
 
   const hasRedirected = useRef(false);
-  const didAuth = useRef(false); // garde anti-double-auth
+  const didAuth = useRef(false);
   const [userReady, setUserReady] = useState(false);
 
-  /* ────────── Étape 1 : lecture du code d’invitation ────────── */
+  /* ───────────── 1. Collecte code d’invitation ───────────── */
   useEffect(() => {
+    /* a. dans l’URL */
     const urlParams = new URLSearchParams(window.location.search);
-    const inviteCode = urlParams.get("invite");
+    const inviteCodeFromURL = urlParams.get("invite");
+
+    /* b. dans le start_param Telegram */
+    const rawStart = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+    const inviteCodeFromStart =
+      rawStart?.startsWith("invite=") ? rawStart.slice(7) : null;
+
+    const inviteCode = inviteCodeFromURL || inviteCodeFromStart;
+
+    console.log("🔎 inviteCode URL =", inviteCodeFromURL);
+    console.log("🔎 inviteCode start_param =", inviteCodeFromStart);
+
     if (!inviteCode) return;
 
     axios
@@ -60,32 +69,40 @@ function AppRoutes() {
         if (res.data?.inviterId) {
           localStorage.setItem("inviterId", res.data.inviterId);
           console.log("✅ inviterId stocké :", res.data.inviterId);
+        } else {
+          console.warn("⚠️ inviteCode reconnu, mais pas de parrain ?!");
         }
       })
       .catch((err) => {
-        console.warn("❌ Code d’invitation invalide :", err);
+        console.warn("❌ Code d’invitation invalide :", err?.response?.data || err);
       });
   }, []);
 
-  /* ────────── Étape 2 : auth Telegram (une seule fois) ────────── */
+  /* ───────────── 2. Auth Telegram (une fois) ───────────── */
   useEffect(() => {
     if (didAuth.current) return;
+
     const tg = window.Telegram?.WebApp;
     if (!tg) return console.warn("❌ Telegram WebApp not available");
 
     tg.ready();
-    console.log("✅ Telegram WebApp ready");
 
     const initData = tg.initData;
     if (!initData) return console.warn("❌ initData manquant");
+
     didAuth.current = true;
 
     const inviterId = localStorage.getItem("inviterId") || null;
+    const rawStart = tg.initDataUnsafe?.start_param;
+    const inviteCode =
+      rawStart?.startsWith("invite=") ? rawStart.slice(7) : null;
+
+    console.log("🚀 POST /auth/telegram body :", { inviterId, inviteCode });
 
     axios
       .post(
         `${API_BASE}/api/auth/telegram`,
-        { inviterId },
+        { inviterId, inviteCode },
         { headers: { Authorization: `tma ${initData}` } },
       )
       .then((res) => {
@@ -95,30 +112,23 @@ function AppRoutes() {
         localStorage.removeItem("inviterId");
       })
       .catch((err) => {
-        /* eslint-disable-next-line @typescript-eslint/no-unsafe-member-access */
-        console.error("❌ Erreur auth Telegram :", err.response?.data ?? err);
+        console.error("❌ Erreur auth Telegram :", err?.response?.data || err);
       });
   }, [setUser]);
 
-  /* ────────── Étape 3 : redirection automatique ────────── */
+  /* ───────────── 3. Redirection automatique ───────────── */
   useEffect(() => {
-    const onBoardPaths = ["/", "/onboarding"];
-    const shouldRedirect =
-      onBoardPaths.includes(location.pathname.toLowerCase());
-
-    if (!hasRedirected.current && userReady && shouldRedirect) {
+    const onBoard = ["/", "/onboarding"];
+    if (!hasRedirected.current && userReady && onBoard.includes(location.pathname.toLowerCase())) {
       hasRedirected.current = true;
       navigate("/bet", { replace: true });
     }
   }, [userReady, location.pathname, navigate]);
 
-  /* ────────── Étape 4 : écoute des messages iframe ────────── */
+  /* ───────────── 4. Iframe messages ───────────── */
   useEffect(() => {
-    const handler = (event: MessageEvent) => {
-      if (
-        event.data?.action === "goToMainScreen" &&
-        location.pathname !== "/bet"
-      ) {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.action === "goToMainScreen" && location.pathname !== "/bet") {
         navigate("/bet");
       }
     };
@@ -126,7 +136,7 @@ function AppRoutes() {
     return () => window.removeEventListener("message", handler);
   }, [navigate, location.pathname]);
 
-  /* ────────── JSX des routes ────────── */
+  /* ───────────── Routes ───────────── */
   return (
     <Routes>
       <Route path="/" element={<OnBoarding />} />
@@ -135,10 +145,7 @@ function AppRoutes() {
       <Route path="/top" element={<LeaderBoard />} />
       <Route path="/bet" element={<Bet />} />
       <Route path="/congratulations" element={<Congratulations />} />
-      <Route
-        path="/congratulations-score"
-        element={<CongratulationsWithScore />}
-      />
+      <Route path="/congratulations-score" element={<CongratulationsWithScore />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/airdrop" element={<Airdrop />} />
@@ -147,12 +154,11 @@ function AppRoutes() {
 }
 
 /* ========================================================================= */
-/*                               APP ROOT                                    */
+/*                                   ROOT                                    */
 /* ========================================================================= */
 
 function App() {
   useBackgroundMusic("/assets/sounds/21Musichome.mp3", 0.1);
-  // useFullscreenOnStart();
 
   return (
     <TonConnectUIProvider

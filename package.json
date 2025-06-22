@@ -32,6 +32,7 @@
     "ton": "^13.9.0"
   },
   "devDependencies": {
+    "@twa-dev/types": "^8.0.2",
     "@types/crypto-js": "^4.2.2",
     "@types/node": "^20.14.12",
     "@types/react": "^18.3.23",
