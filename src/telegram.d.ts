@@ -1,41 +1,37 @@
-/* src/types/telegram.d.ts
-   — types globaux pour Telegram WebApp
-   — un seul endroit → plus de conflits de déclarations */
+/* src/types/telegram.d.ts  (complète / remplace celle existante) */
 
-export interface TelegramInitDataUnsafe {
-  query_id?: string;
-  user?: {
-    id: number;
-    first_name: string;
-    last_name?: string;
-    username?: string;
-    language_code?: string;
-    allows_write_to_pm?: boolean;
-  };
-  auth_date?: string;
-  start_param?: string; // ← inviteCode placé ici par Telegram
-  hash?: string;
-  [key: string]: unknown; // pour les clés futures
-}
+export interface TelegramInitDataUnsafe { /* … inchangé … */ }
+
+export type TwaEvent =
+  | "themeChanged"
+  | "viewportChanged"
+  | "mainButtonClicked"
+  | "backButtonClicked"
+  | "settingsButtonClicked"
+  | "invoiceClosed"
+  | "popupClosed"
+  | "qrTextReceived"
+  | "clipboardTextReceived"
+  | string;                        // fallback
 
 export interface TelegramWebApp {
-  /* Données signées */
+  /* --- propriétés core --- */
   initData: string;
   initDataUnsafe?: TelegramInitDataUnsafe;
 
-  /* Méthodes courantes */
-  ready: () => void;
-  close: () => void;
+  /* --- méthodes basiques --- */
+  ready(): void;
+  close(): void;
+  expand(): void;
+  requestFullscreen(): void;
+  isVersionAtLeast(version: string): boolean;
 
-  /* Optionnel : MainButton, Haptic, etc.  Ajoute-les si tu en as besoin.
-     Exemple :
-     MainButton?: {
-       text: string;
-       isVisible: boolean;
-       show: () => void;
-       hide: () => void;
-     };
-  */
+  /* --- events --- */
+  onEvent(type: TwaEvent, cb: (...args: any[]) => void): void;
+  offEvent(type: TwaEvent, cb: (...args: any[]) => void): void;
+  sendEvent(type: TwaEvent, data?: unknown): void; // optionnel
+
+  /* … ajoute d’autres propriétés si tu les emploies … */
 }
 
 export interface TelegramGlobal {
@@ -48,5 +44,4 @@ declare global {
   }
 }
 
-/* transforme ce fichier en module, sinon TypeScript l’ignore */
 export {};
