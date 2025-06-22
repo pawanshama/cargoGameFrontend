@@ -1,3 +1,5 @@
+/* src/Component/pages/FreeBetMissions/index.tsx */
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../includes/Header";
@@ -7,111 +9,106 @@ import Mission2 from "./Mission2";
 import PopupMission1 from "./PopupMission1";
 import PopupMission2 from "./PopupMission2";
 
+/* ---------- Config ---------- */
 const missions = [
-  {
-    id: 1,
-    title: "Double Your First Deposit!",
-  },
-  {
-    id: 2,
-    title: "Invite Your Friends and Get Up to 150$",
-  },
+  { id: 1, title: "Double Your First Deposit!" },
+  { id: 2, title: "Invite Your Friends and Get Up to 150$" },
 ];
 
-const FreeBetMissions = () => {
+/* ---------- Composant ---------- */
+const FreeBetMissions: React.FC = () => {
   const [activeMission, setActiveMission] = useState<number | null>(null);
-  const [activePopupMission, setActivePopupMission] = useState<number | null>(null);
-  const [hasDeposited, setHasDeposited] = useState<boolean>(false);
-  const [depositAmount, setDepositAmount] = useState<number | undefined>(undefined);
+  const [activePopupMission, setActivePopupMission] =
+    useState<number | null>(null);
 
-  const [invitedCount, setInvitedCount] = useState<number>(0);
-  const [totalCashback, setTotalCashback] = useState<number>(0);
-  const [yourCashback, setYourCashback] = useState<number>(0);
-  const [friendsCashback, setFriendsCashback] = useState<number>(0);
+  const [hasDeposited, setHasDeposited] = useState(false);
+  const [depositAmount, setDepositAmount] = useState<number | undefined>();
+
+  const [invitedCount, setInvitedCount] = useState(0);
+  const [totalCashback, setTotalCashback] = useState(0);
+  const [yourCashback, setYourCashback] = useState(0);
+  const [friendsCashback, setFriendsCashback] = useState(0);
 
   const navigate = useNavigate();
 
+  /* ---------- Effet : fetch missions ---------- */
   useEffect(() => {
-    const initData = window.Telegram?.WebApp?.initData;
+    const initData = window.Telegram?.WebApp.initData;
     if (!initData) return;
 
-    const checkFirstDeposit = async () => {
+    const fetchDepositStatus = async () => {
       try {
-        const res = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/user/deposit-status", {
-          headers: {
-            Authorization: `tma ${initData}`,
-          },
-        });
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/user/deposit-status`,
+          { headers: { Authorization: `tma ${initData}` } },
+        );
         const data = await res.json();
         setHasDeposited(data.hasDeposited);
-        setDepositAmount(data.depositAmount); // ✅
+        setDepositAmount(data.depositAmount);
       } catch (err) {
-        console.error("❌ Erreur lors de la récupération du statut de dépôt :", err);
+        console.error("❌ deposit-status :", err);
       }
     };
 
     const fetchInviteStats = async () => {
       try {
-        const res = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/user/invite-status", {
-          headers: {
-            Authorization: `tma ${initData}`,
-          },
-        });
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/user/invite-status`,
+          { headers: { Authorization: `tma ${initData}` } },
+        );
         const data = await res.json();
-        setInvitedCount(data.invitedCount || 0);
-        setTotalCashback(data.totalCashback || 0);
-        setYourCashback(data.yourCashback || 0);
-        setFriendsCashback(data.friendsCashback || 0);
+        setInvitedCount(data.invitedCount ?? 0);
+        setTotalCashback(data.totalCashback ?? 0);
+        setYourCashback(data.yourCashback ?? 0);
+        setFriendsCashback(data.friendsCashback ?? 0);
       } catch (err) {
-        console.error("❌ Erreur lors de la récupération des stats d’invitation :", err);
+        console.error("❌ invite-status :", err);
       }
     };
 
-    checkFirstDeposit();
+    fetchDepositStatus();
     fetchInviteStats();
   }, []);
 
+  /* ---------- Rendu JSX ---------- */
   return (
-    <div className="relative w-full bg-gradient-to-b from-[#160028] to-[#2b1048] text-white min-h-screen flex flex-col pb-28">
+    <div className="relative w-full min-h-screen bg-gradient-to-b from-[#160028] to-[#2b1048] text-white flex flex-col pb-28">
       <Header
         pageHeading={
-          <span className="text-[28px] font-bold font-designer text-white uppercase">
+          <span className="text-[28px] font-bold font-designer uppercase">
             FREE BET MISSIONS
           </span>
         }
       />
 
-      <div className="px-4 pt-2 text-center">
-        <p className="text-[15px] text-white opacity-80">
-          Exciting Rewards Await! Complete Missions and Earn Free Bets!
-        </p>
+      <div className="px-4 pt-2 text-center opacity-80 text-[15px]">
+        Exciting Rewards Await! Complete Missions and Earn Free Bets!
       </div>
 
       <div className="px-4 mt-6 flex flex-col gap-5">
-        {missions.map((mission) => (
-          <div
-            key={mission.id}
-            className="w-full border border-[#9752b9] rounded-xl px-5 py-4 flex justify-between items-center cursor-pointer active:scale-95 transition-transform duration-100"
+        {missions.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            className="w-full border border-[#9752b9] rounded-xl px-5 py-4 flex justify-between items-center active:scale-95 transition-transform duration-100"
             onClick={() => {
-              if (mission.id === 1 && hasDeposited) return;
-              setActiveMission(mission.id);
+              if (m.id === 1 && hasDeposited) return;
+              setActiveMission(m.id);
             }}
           >
             <div className="flex items-center gap-3">
-              <img src="/assets/rocket.webp" alt="rocket" className="w-10 h-10" />
-              <div className="flex flex-col leading-snug">
-                <p className="text-white text-[13px] font-bold font-designer uppercase tracking-wide">
-                  MISSION {mission.id}
+              <img src="/assets/rocket.webp" alt="" className="w-10 h-10" />
+              <div className="text-left leading-snug">
+                <p className="text-[13px] font-bold font-designer uppercase">
+                  MISSION {m.id}
                 </p>
-                <p className="text-[#00FFB2] text-[16px] font-bold font-lato leading-tight">
-                  {mission.title}
+                <p className="text-[#00FFB2] text-[16px] font-bold font-lato">
+                  {m.title}
                 </p>
               </div>
             </div>
-            <span className="text-white text-[30px] font-bold transition-transform duration-200">
-              &gt;
-            </span>
-          </div>
+            <span className="text-[30px] font-bold">&gt;</span>
+          </button>
         ))}
       </div>
 
@@ -143,7 +140,6 @@ const FreeBetMissions = () => {
           }}
         />
       )}
-
       {activePopupMission === 2 && (
         <PopupMission2
           onClose={() => {
