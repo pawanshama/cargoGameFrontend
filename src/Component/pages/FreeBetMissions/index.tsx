@@ -12,17 +12,16 @@ import PopupMission2 from "./PopupMission2";
 /* ---------- Config ---------- */
 const missions = [
   { id: 1, title: "Double Your First Deposit!" },
-  { id: 2, title: "Invite Your Friends and Get Up to 150$" },
+  { id: 2, title: "Invite Your Friends and Get Up to $150" },
 ];
 
 /* ---------- Composant ---------- */
 const FreeBetMissions: React.FC = () => {
   const [activeMission, setActiveMission] = useState<number | null>(null);
-  const [activePopupMission, setActivePopupMission] =
-    useState<number | null>(null);
+  const [activePopupMission, setActivePopupMission] = useState<number | null>(null);
 
   const [hasDeposited, setHasDeposited] = useState(false);
-  const [depositAmount, setDepositAmount] = useState<number | undefined>();
+  const [depositAmount, setDepositAmount] = useState<number>();
 
   const [invitedCount, setInvitedCount] = useState(0);
   const [totalCashback, setTotalCashback] = useState(0);
@@ -70,7 +69,7 @@ const FreeBetMissions: React.FC = () => {
     fetchInviteStats();
   }, []);
 
-  /* ---------- Rendu JSX ---------- */
+  /* ---------- Rendu ---------- */
   return (
     <div className="relative w-full min-h-screen bg-gradient-to-b from-[#160028] to-[#2b1048] text-white flex flex-col pb-28">
       <Header
@@ -81,20 +80,18 @@ const FreeBetMissions: React.FC = () => {
         }
       />
 
-      <div className="px-4 pt-2 text-center opacity-80 text-[15px]">
+      <p className="px-4 pt-2 text-center opacity-80 text-[15px]">
         Exciting Rewards Await! Complete Missions and Earn Free Bets!
-      </div>
+      </p>
 
+      {/* ---------- Cartes missions ---------- */}
       <div className="px-4 mt-6 flex flex-col gap-5">
         {missions.map((m) => (
           <button
             key={m.id}
             type="button"
             className="w-full border border-[#9752b9] rounded-xl px-5 py-4 flex justify-between items-center active:scale-95 transition-transform duration-100"
-            onClick={() => {
-              if (m.id === 1 && hasDeposited) return;
-              setActiveMission(m.id);
-            }}
+            onClick={() => setActiveMission(m.id)}         // ← garde supprimée
           >
             <div className="flex items-center gap-3">
               <img src="/assets/rocket.webp" alt="" className="w-10 h-10" />
@@ -112,6 +109,7 @@ const FreeBetMissions: React.FC = () => {
         ))}
       </div>
 
+      {/* ---------- Overlays missions ---------- */}
       {activeMission === 1 && (
         <Mission1
           onBack={() => setActiveMission(null)}
@@ -132,6 +130,7 @@ const FreeBetMissions: React.FC = () => {
         />
       )}
 
+      {/* ---------- Pop-ups collecte ---------- */}
       {activePopupMission === 1 && (
         <PopupMission1
           onClose={() => {
