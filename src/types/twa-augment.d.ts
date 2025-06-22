@@ -1,11 +1,9 @@
-/* src/types/twa-augment.d.ts
-   — complète les définitions globales fournies par @twa-dev/types */
-
-import "@twa-dev/types";        // ➊ rend le fichier « module » et assure le chargement
+import "@twa-dev/types";          // ↩︎ charge la def officielle
 
 declare global {
   namespace Telegram {
     interface InitDataUnsafe {
+      /** Ajout de la clé manquante */
       user?: {
         id: number;
         first_name: string;
@@ -18,4 +16,4 @@ declare global {
   }
 }
 
-export {};                      // ➋ force le scope module pour ce fichier
+export {};                        // ↩︎ marque ce fichier comme module
