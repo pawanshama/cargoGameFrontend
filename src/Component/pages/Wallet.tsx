@@ -7,7 +7,7 @@ import Deposit from "../wallet/Deposit";
 import Withdraw from "../wallet/Withdraw";
 import HorizontalTabs from "../common/Tabs";
 import { useTonWallet } from "@tonconnect/ui-react";
-import { Address } from "ton-core";
+import { Address } from "@ton/core";
 
 const Wallet = () => {
   const [activeTab, setActiveTab] = useState(0);

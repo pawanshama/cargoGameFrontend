@@ -1,5 +1,5 @@
 // src/utils/formatAddress.ts
-import { Address } from "ton-core";
+import { Address } from "@ton/core";
 
 export function toFriendlyAddress(raw: string): string {
   try {

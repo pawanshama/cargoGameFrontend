@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useUser } from "../context/UserContext";
 import { useTonWallet, useTonConnectUI } from "@tonconnect/ui-react";
 import Button from "../common/Button";
-import { Address } from "ton-core";
+import { Address } from "@ton/core";
 
 interface DepositProps {
   refreshWallet: () => void;
