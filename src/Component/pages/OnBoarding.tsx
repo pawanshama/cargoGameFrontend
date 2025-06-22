@@ -81,7 +81,7 @@ const ProgressCircle: React.FC<ProgressCircleProps> = ({
 const OnBoarding = () => {
   const [percent, setPercent] = useState(0);
   const [startTime] = useState(Date.now());
-  const [inviteCode, setInviteCode] = useState<string | null>(null);
+
   const navigate = useNavigate();
   const { isAuthenticated, token, refreshToken, userDetails } = useAppSelector(authDataSelector);
 
@@ -111,66 +111,65 @@ const OnBoarding = () => {
     }, delay);
   }, [isAuthenticated, userDetails]);
 
-  // 🔍 Récupère le code d’invitation depuis l’URL
-  useEffect(() => {
-  const { WebApp } = window.Telegram || {};
-  const raw = WebApp?.initDataUnsafe?.start_param;
 
-  if (raw?.startsWith("invite=")) {
-    const code = raw.split("=")[1];
-    setInviteCode(code);
-    localStorage.setItem("inviteCode", code);
-    console.log("✅ Invite code extrait via initDataUnsafe :", code);
-  }
-}, []);
 
 
   // 📲 Init Telegram + appel backend avec l'inviteCode
-  useEffect(() => {
-    const initTelegram = async () => {
-      const { WebApp } = window.Telegram;
-      WebApp.ready();
-      console.log("✅ Telegram ready, InitData:", WebApp.initData);
+useEffect(() => {
+  const initTelegram = async () => {
+    const { WebApp } = window.Telegram;
+    WebApp.ready();
+    console.log("✅ Telegram ready, InitData:", WebApp.initData);
 
-      // Appel API avec les données Telegram et l'inviteCode
-      try {
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/telegram`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-init-data": WebApp.initData, // Important !
-          },
-          body: JSON.stringify({
-            inviteCode: inviteCode, // Envoie du code d'invitation
-          }),
-        });
+    // Récupération fiable de l'inviteCode directement dans l'initDataUnsafe
+    const raw = WebApp?.initDataUnsafe?.start_param;
+    let inviteCode = null;
 
-        const data = await response.json();
-        console.log("✅ Utilisateur connecté avec parrainage :", data);
-      } catch (error) {
-        console.error("❌ Erreur envoi inviteCode :", error);
-      }
-    };
-
-    if (window.Telegram && inviteCode) {
-      initTelegram(); // Appel API avec Telegram et inviteCode
+    if (raw?.startsWith("invite=")) {
+      inviteCode = raw.split("=")[1];
+      console.log("✅ Invite code détecté et utilisé :", inviteCode);
+    } else {
+      console.log("❌ Aucun code d'invitation trouvé");
     }
-  }, [inviteCode]); // Le hook se déclenche dès que inviteCode est disponible
 
-  return (
-    <div className="w-full h-[100dvh] relative flex flex-col items-center justify-center">
-      <ImgWithFallback
-        src={LogoBigOptimised}
-        fallback={LogoBig}
-        alt="Logo"
-        loading="lazy"
-        className="max-w-[640px] w-full object-contain"
-      />
-      <div className="absolute z-10 flex items-center justify-center -translate-x-1/2 -translate-y-6 left-1/2 top-3/4">
-        <ProgressCircle percentage={percent} />
-      </div>
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/telegram`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-init-data": WebApp.initData, // Indispensable !
+        },
+        body: JSON.stringify({
+          inviteCode: inviteCode, // null ou string
+        }),
+      });
+
+      const data = await response.json();
+      console.log("✅ Utilisateur connecté avec parrainage :", data);
+    } catch (error) {
+      console.error("❌ Erreur envoi inviteCode :", error);
+    }
+  };
+
+   if (window.Telegram) {
+    initTelegram(); // Appel unique, dès que Telegram est dispo
+  }
+}, []);
+
+return (
+  <div className="w-full h-[100dvh] relative flex flex-col items-center justify-center">
+    <ImgWithFallback
+      src={LogoBigOptimised}
+      fallback={LogoBig}
+      alt="Logo"
+      loading="lazy"
+      className="max-w-[640px] w-full object-contain"
+    />
+    <div className="absolute z-10 flex items-center justify-center -translate-x-1/2 -translate-y-6 left-1/2 top-3/4">
+      <ProgressCircle percentage={percent} />
     </div>
-  );
+  </div>
+);
 };
 
 export default OnBoarding;
