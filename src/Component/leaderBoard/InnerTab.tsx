@@ -1,6 +1,6 @@
 /* ===========================================================================
    src/Component/leaderBoard/InnerTab.tsx
-   Version “studio-grade” : code épuré, typage strict, animations fluides
+   ⬇️ Copie-colle intégralement ce fichier – prêt à l’emploi
    ========================================================================== */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -9,16 +9,13 @@ import { ArrowUpCircle } from "lucide-react";
 import ProfilePic from "../../assets/images/dummyProfile.png";
 import TopCard from "./TopCard";
 
-/* ------------------------------------------------------------------ */
-/*                               Types                                */
-/* ------------------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
+/*                               TYPES & MOCKS                                */
+/* -------------------------------------------------------------------------- */
 export interface InnerTabProps {
   period: "all time" | "daily" | "weekly" | "monthly";
 }
 
-/* ------------------------------------------------------------------ */
-/*                       Mock / replace with API                      */
-/* ------------------------------------------------------------------ */
 interface Player {
   rank: number;
   title: string;
@@ -26,79 +23,78 @@ interface Player {
   profilePic: string;
 }
 
+/* → remplace mockPlayers par tes données backend */
 const mockPlayers: Player[] = Array.from({ length: 50 }, (_, i) => ({
   rank: i + 1,
-  amount: 1_801_991 - i * 873,
   title: i === 3 ? "amazo_777" : "Davislatimp",
+  amount: 1_801_991 - i * 873,
   profilePic: ProfilePic,
 }));
 
-/* ------------------------------------------------------------------ */
-/*                             Component                              */
-/* ------------------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
+/*                                   COMPONENT                                */
+/* -------------------------------------------------------------------------- */
 const InnerTab: React.FC<InnerTabProps> = ({ period }) => {
-  /* --------------- constants & derived data --------------- */
-  const currentUserRank = 4;                            // todo: store / API
+  /* ----- CONSTANTS ----- */
+  const currentUserRank = 4;                           // TODO: bind store/API
   const currentPlayer   = mockPlayers.find(p => p.rank === currentUserRank);
 
-  const [topThree, others] = useMemo(() => {
+  /* ----- SPLIT DATA ----- */
+  const [podium, others] = useMemo(() => {
     const [first, second, third, ...rest] = mockPlayers;
     return [[first, second, third], rest] as const;
   }, []);
 
-  /* ----------------------- refs & state -------------------- */
-  const topAnchorRef   = useRef<HTMLDivElement>(null);
-  const sentinelRef    = useRef<HTMLDivElement>(null);
-  const [showScrollUp, setShowScrollUp] = useState(false);
+  /* ----- SCROLL-UP LOGIC ----- */
+  const anchorRef   = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [showUp,    setShowUp] = useState(false);
 
-  /* ----------------- intersection observer ---------------- */
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => setShowScrollUp(!entry.isIntersecting),
+    const io = new IntersectionObserver(
+      ([entry]) => setShowUp(!entry.isIntersecting),
       { threshold: 0.2 },
     );
-    if (sentinelRef.current) observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
+    sentinelRef.current && io.observe(sentinelRef.current);
+    return () => io.disconnect();
   }, []);
 
-  /* ---------------------- handlers ------------------------ */
   const scrollToTop = () =>
-    topAnchorRef.current?.scrollIntoView({ behavior: "smooth" });
+    anchorRef.current?.scrollIntoView({ behavior: "smooth" });
 
-  /* ------------------------ render ------------------------ */
+  /* ---------------------------------------------------------------------- */
+  /*                                   RENDER                               */
+  /* ---------------------------------------------------------------------- */
   return (
     <section className="relative flex w-full flex-col gap-6">
-      {/* anchor */}
-      <div ref={topAnchorRef} />
+      {/* anchor haut de liste */}
+      <div ref={anchorRef} />
 
-      {/* ================== PODIUM ================== */}
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.ol
-          layout
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mx-auto grid w-full max-w-[350px] grid-cols-3 items-end gap-3"
-        >
-          {topThree.map(
-            (user) =>
-              user && (
-                <TopCard
-                  key={user.rank}
-                  {...user}
-                  isCurrentUser={user.rank === currentUserRank}
-                />
-              ),
-          )}
-        </motion.ol>
-      </AnimatePresence>
+      {/* ------------------------- PODIUM ------------------------- */}
+      <motion.ol
+        layout
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.28, ease: "easeOut" }}
+        className="mx-auto grid w-full max-w-[350px] grid-cols-3 items-end gap-3"
+      >
+        {podium.map(
+          user =>
+            user && (
+              <TopCard
+                key={user.rank}
+                {...user}
+                isCurrentUser={user.rank === currentUserRank}
+              />
+            ),
+        )}
+      </motion.ol>
 
-      {/* ================ MAIN LIST ================= */}
-      <div className="flex flex-col rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md">
-        {/* highlight current user if not in podium */}
+      {/* --------------------- MAIN LIST --------------------- */}
+      <div className="flex flex-col overflow-hidden rounded-2xl border border-white/15 bg-white/5/30 backdrop-blur-md px-4 py-3">
+        {/* current user highlight (if not podium) */}
         {currentPlayer && currentPlayer.rank > 3 && (
-          <TopCard key="current" {...currentPlayer} isCurrentUser />
+          <TopCard key="me" {...currentPlayer} isCurrentUser />
         )}
 
         {others.map((user, idx) => (
@@ -112,26 +108,29 @@ const InnerTab: React.FC<InnerTabProps> = ({ period }) => {
         ))}
       </div>
 
-      {/* ============== FLOATING SCROLL-UP ============== */}
+      {/* ------------------ SCROLL-TO-TOP BTN ------------------ */}
       <AnimatePresence>
-        {showScrollUp && (
+        {showUp && (
           <motion.button
-            key="up"
+            key="scrollUp"
             initial={{ opacity: 0, scale: 0.7 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.7 }}
             transition={{ duration: 0.25 }}
             onClick={scrollToTop}
             aria-label="Scroll to top"
-            className="fixed bottom-[128px] right-6 z-50 rounded-full bg-gradient-to-tr from-[#22e584] to-[#2CFD95] p-3 text-black shadow-xl backdrop-blur-md active:scale-95"
+            className="fixed bottom-[120px] right-6 z-50 rounded-full bg-gradient-to-tr from-[#22e584] to-[#2CFD95] p-3 text-black shadow-xl backdrop-blur-md active:scale-95"
           >
             <ArrowUpCircle className="h-6 w-6" />
           </motion.button>
         )}
       </AnimatePresence>
 
-      {/* period info (optional) */}
-      <p className="mt-4 self-center text-xs text-white/60 tracking-wide">
+      {/* footer padding pour TabBar Telegram */}
+      <div className="h-[180px]" />
+
+      {/* période info (facultatif) */}
+      <p className="absolute bottom-[140px] left-1/2 -translate-x-1/2 text-[11px] font-medium tracking-wide text-white/60">
         {period} leaderboard
       </p>
     </section>
