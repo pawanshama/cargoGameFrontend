@@ -20,6 +20,7 @@ import NotificationModal from "../modals/NotificationModal"; // adapte le chemin
 interface HeaderProps {
   pageHeading: React.ReactNode | string;
   refreshTrigger?: number; // 👈 nouvelle prop
+  className?: string;
 }
 
 const Header: React.FC<HeaderProps> = ({ pageHeading, refreshTrigger }) => {

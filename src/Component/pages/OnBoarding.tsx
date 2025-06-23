@@ -1,5 +1,5 @@
 /*  src/Component/pages/OnBoarding.tsx
-    – “just-right” neon ring, responsive & aligned                 */
+    – responsive neon loader (v3-final)                              */
 
 import { useEffect, useState }          from "react";
 import { useNavigate }                  from "react-router-dom";
@@ -12,32 +12,23 @@ import LogoBigOptimised                  from "../../assets/images/logoBig.webp"
 import { authDataSelector }             from "../../redux/reducers/userSlice";
 import { useAppSelector }               from "../../redux/hooks";
 
-/* ------------------------------------------------------------------ */
-/*                        Neon progress-ring (v3)                      */
-/* ------------------------------------------------------------------ */
-const NeonRing = ({ pct }: { pct: number }) => {
-  /** Ø anneau : 18 vw (min 72, max 130 px) */
-  const size   = Math.max(72, Math.min(130, window.innerWidth * 0.18));
+/* ─────────────────────────────── ring ────────────────────────────── */
+const NeonRing: React.FC<{ pct: number }> = ({ pct }) => {
+  /* diamètre : 18 vw (entre 72 px et 130 px) */
+  const size      = Math.max(72, Math.min(130, window.innerWidth * 0.18));
+  const stroke    = Math.max(5, Math.min(7, size * 0.055));      // 5-7 px
+  const dotR      = Math.max(4, Math.min(6, size * 0.047));      // 4-6 px
+  const r         = (size - stroke - dotR * 2 - 2) / 2;          // marge 1 px
+  const c         = 2 * Math.PI * r;
+  const dashOff   = c * (1 - pct / 100);
 
-  /** épaisseur 5 → 7 px selon la taille  */
-  const stroke = Math.max(5, Math.min(7, size * 0.055));
-
-  /** rayon du “dot” 4 → 6 px  */
-  const dotR   = Math.max(4, Math.min(6, size * 0.047));
-
-  /** rayon interne, toujours ≥ 0 (on garde 2 px de marge) */
-  const r   = (size - stroke - dotR * 2 - 2) / 2;
-  const c   = 2 * Math.PI * r;
-  const off = c * (1 - pct / 100);
-
-  /* position du dot */
-  const ang  = (pct / 100) * 360 - 90;
-  const rad  = (ang * Math.PI) / 180;
-  const cx   = size / 2 + r * Math.cos(rad);
-  const cy   = size / 2 + r * Math.sin(rad);
+  const ang       = (pct / 100) * 360 - 90;
+  const rad       = (ang * Math.PI) / 180;
+  const cx        = size / 2 + r * Math.cos(rad);
+  const cy        = size / 2 + r * Math.sin(rad);
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} shapeRendering="geometricPrecision">
       <defs>
         <linearGradient id="g" gradientTransform="rotate(90)">
           <stop offset="0%"   stopColor="#00ffa2" />
@@ -52,18 +43,14 @@ const NeonRing = ({ pct }: { pct: number }) => {
         </filter>
       </defs>
 
-      {/* track */}
-      <circle
-        cx="50%" cy="50%" r={r}
-        stroke="#4d2e7d" strokeWidth={stroke}
-        opacity="0.3" fill="none"
-      />
+      {/* piste */}
+      <circle cx="50%" cy="50%" r={r} stroke="#4d2e7d" strokeWidth={stroke} opacity={0.3} fill="none" />
 
-      {/* progress */}
+      {/* progression */}
       <circle
         cx="50%" cy="50%" r={r}
         stroke="url(#g)" strokeWidth={stroke} strokeLinecap="round"
-        strokeDasharray={c} strokeDashoffset={off}
+        strokeDasharray={c} strokeDashoffset={dashOff}
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
         fill="none" filter="url(#glow)"
       />
@@ -72,7 +59,7 @@ const NeonRing = ({ pct }: { pct: number }) => {
       <circle cx={cx} cy={cy} r={dotR}        fill="#fff" />
       <circle cx={cx} cy={cy} r={dotR * 0.45} fill="#5f5d72" />
 
-      {/* % */}
+      {/* pourcentage */}
       <text
         x="50%" y="50%" dy=".28em" textAnchor="middle"
         className="fill-white font-bold"
@@ -84,9 +71,7 @@ const NeonRing = ({ pct }: { pct: number }) => {
   );
 };
 
-/* ------------------------------------------------------------------ */
-/*                               Page                                 */
-/* ------------------------------------------------------------------ */
+/* ─────────────────────────────── page ────────────────────────────── */
 const OnBoarding: React.FC = () => {
   const [pct, setPct] = useState(0);
   const born          = useState(() => Date.now())[0];
@@ -95,7 +80,7 @@ const OnBoarding: React.FC = () => {
     useAppSelector(authDataSelector);
   const navigate = useNavigate();
 
-  /* 0 → 90 % */
+  /* animation 0 → 90 % */
   useEffect(() => {
     let i = 0;
     const id = setInterval(() => {
@@ -106,10 +91,11 @@ const OnBoarding: React.FC = () => {
     return () => clearInterval(id);
   }, []);
 
-  /* auth ok → 100 % puis bet */
+  /* passe à 100 % puis redirige */
   useEffect(() => {
     if (!isAuthenticated || !userDetails) return;
     const delay = Math.max(0, 1500 - (Date.now() - born));
+
     const id = setTimeout(() => {
       setPct(100);
       localStorage.setItem("token",        token);
@@ -117,21 +103,21 @@ const OnBoarding: React.FC = () => {
       localStorage.setItem("userDetails",  JSON.stringify(userDetails));
       navigate("/bet", { replace: true });
     }, delay);
+
     return () => clearTimeout(id);
   }, [isAuthenticated, userDetails, token, refreshToken, navigate, born]);
 
-  /* ------------------------------ UI ------------------------------ */
+  /* ─────────────────────────── UI ─────────────────────────── */
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center
-                    bg-gradient-to-br from-[#12001e] via-[#1d0038] to-[#090012]
-                    overflow-hidden relative">
+    <div className="w-full h-screen flex flex-col items-center justify-center overflow-hidden relative
+                    bg-gradient-to-br from-[#12001e] via-[#1d0038] to-[#090012]">
 
-      {/* halo */}
+      {/* halo animé (pointer-events none pour éviter tout focus) */}
       <motion.div
-        className="absolute w-[140%] h-[140%]
+        className="absolute w-[140%] h-[140%] pointer-events-none
                    bg-[radial-gradient(circle_at_center,rgba(0,255,185,0.45),transparent_65%)]"
-        initial={{ scale: .8, opacity: 0 }}
-        animate={{ scale: 1.25, opacity: .17, rotate: 45 }}
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1.25, opacity: 0.17, rotate: 45 }}
         transition={{ repeat: Infinity, duration: 12, ease: "linear" }}
       />
 
@@ -143,24 +129,24 @@ const OnBoarding: React.FC = () => {
           initial={{ y: 40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: .7, ease: "easeOut" }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
         >
           <ImgWithFallback
             src={LogoBigOptimised}
             fallback={LogoBig}
             alt="Corgi in Space"
-            className="w-full h-auto pointer-events-none select-none"
             loading="eager"
+            className="w-full h-auto select-none pointer-events-none"
           />
         </motion.div>
       </AnimatePresence>
 
-      {/* ring */}
+      {/* anneau de chargement */}
       <motion.div
         className="w-full flex justify-center mt-[clamp(3rem,8vh,5.25rem)]"
         initial={{ y: 28, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: .25 }}
+        transition={{ delay: 0.25 }}
       >
         <NeonRing pct={pct} />
       </motion.div>
