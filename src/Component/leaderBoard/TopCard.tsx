@@ -1,55 +1,56 @@
 /* ===========================================================================
    src/Component/leaderBoard/TopCard.tsx
-   Copie-colle ce fichier complet – compatible avec le nouvel InnerTab
+   Version finale — contraste podium, spacing cohérent, flèche bleue ready
    ========================================================================== */
 
 import React from "react";
 import { motion } from "framer-motion";
 import { CurrencyLeaderBoardIcon } from "../../assets/iconset";
 
-/* ------------------------------------------------------------------ */
-/*                               TYPES                                */
-/* ------------------------------------------------------------------ */
+/* ----------------------------- TYPES ----------------------------- */
 export interface CardData {
   rank: number;
   profilePic: string;
   title: string;
   amount: number;
   isCurrentUser?: boolean;
-  isLast?: boolean;
+  isLast?: boolean;          // facultatif mais conservé si tu veux d'autres séparateurs
 }
 
-/* ------------------------------------------------------------------ */
-/*                             HELPERS                                */
-/* ------------------------------------------------------------------ */
-const money = (v: number) =>
+/* --------------------------- HELPERS ----------------------------- */
+const money = (n: number) =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 0,
-  }).format(v);
+  }).format(n);
 
 const suffix = (r: number) =>
   ["th", "st", "nd", "rd"][(r % 100 >> 3) ^ 1 && r % 10] || "th";
 
-/* ------------------------------------------------------------------ */
-/*                          PODIUM CARD                               */
-/* ------------------------------------------------------------------ */
-const podiumGrad = [
-  "linear-gradient(135deg,#f7ce46 0%,#ffeb91 100%)",   // gold
-  "linear-gradient(135deg,#c0c0c0 0%,#e1e1e1 100%)",   // silver
-  "linear-gradient(135deg,#cd7f32 0%,#e8a569 100%)",   // bronze
+/* ------------------------ PODIUM CARD --------------------------- */
+const podiumPalette = [
+  /* Gold   */ ["#f5c83b", "#dba927"],
+  /* Silver */ ["#adb4c2", "#8d949f"],
+  /* Bronze */ ["#c1834d", "#a06b39"],
 ];
 
-const PodiumCard: React.FC<CardData> = ({ rank, profilePic, title, amount, isCurrentUser }) => {
-  const size = rank === 1 ? "w-20 h-20" : "w-16 h-16";
+const PodiumCard: React.FC<CardData> = ({
+  rank,
+  profilePic,
+  title,
+  amount,
+  isCurrentUser,
+}) => {
+  const [from, to]  = podiumPalette[rank - 1];
+  const size        = rank === 1 ? "h-20 w-20" : "h-16 w-16";
 
   return (
     <motion.li
       layout
       whileHover={{ y: -4 }}
-      className="flex w-full flex-col items-center gap-2 rounded-b-3xl p-4"
-      style={{ backgroundImage: podiumGrad[rank - 1] }}
+      className="relative flex w-full flex-col items-center gap-2 rounded-b-3xl p-4"
+      style={{ background: `linear-gradient(135deg,${from} 0%,${to} 100%)` }}
     >
       {/* Rank */}
       <h3 className="font-designer text-3xl text-white drop-shadow">
@@ -61,12 +62,14 @@ const PodiumCard: React.FC<CardData> = ({ rank, profilePic, title, amount, isCur
       <img
         src={profilePic}
         alt={`${title} avatar`}
-        className={`${size} rounded-full ring-2 ring-white/60 object-cover`}
+        className={`${size} rounded-full ring-2 ring-white/70 object-cover`}
         loading="lazy"
       />
 
-      {/* Username */}
-      <p className="truncate text-sm font-semibold text-white/90">{title}</p>
+      {/* Name */}
+      <p className="max-w-[6rem] truncate text-sm font-semibold text-white/90 text-center">
+        {title}
+      </p>
 
       {/* Profit */}
       <div className="flex items-center gap-1">
@@ -74,7 +77,7 @@ const PodiumCard: React.FC<CardData> = ({ rank, profilePic, title, amount, isCur
         <span className="text-primary text-sm">{money(amount)}</span>
       </div>
 
-      {/* YOU badge on podium if needed */}
+      {/* YOU badge */}
       {isCurrentUser && (
         <span className="absolute -top-2 -right-2 rounded-full bg-[#2CFD95] px-2 py-[2px] text-[10px] font-bold text-black shadow">
           YOU
@@ -84,68 +87,58 @@ const PodiumCard: React.FC<CardData> = ({ rank, profilePic, title, amount, isCur
   );
 };
 
-/* ------------------------------------------------------------------ */
-/*                             ROW CARD                               */
-/* ------------------------------------------------------------------ */
+/* -------------------------- ROW CARD --------------------------- */
 const RowCard: React.FC<CardData> = ({
   rank,
   profilePic,
   title,
   amount,
   isCurrentUser,
-  isLast,
 }) => (
-  <div className="relative">
-    <motion.div
-      layout
-      whileHover={{ scale: 1.01 }}
-      className={`relative flex items-center gap-4 rounded-xl px-4 py-3`}
-    >
-      {/* Highlight background */}
-      {isCurrentUser && (
-        <div className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-[#6443ff]/40 to-[#22e584]/40 backdrop-blur-sm" />
-      )}
+  <motion.div
+    layout
+    whileHover={{ scale: 1.015 }}
+    className="relative flex items-center gap-4 rounded-xl bg-white/5/30 px-4 py-3 backdrop-blur-md"
+  >
+    {/* highlight */}
+    {isCurrentUser && (
+      <div className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-[#6443ff]/35 to-[#22e584]/35" />
+    )}
 
-      {/* Badge YOU */}
-      {isCurrentUser && (
-        <span className="absolute -top-2 -right-2 rounded-full bg-[#2CFD95] px-2 py-[2px] text-[10px] font-bold text-black shadow">
-          YOU
-        </span>
-      )}
+    {/* badge */}
+    {isCurrentUser && (
+      <span className="absolute -top-2 -right-2 rounded-full bg-[#2CFD95] px-2 py-[2px] text-[10px] font-bold text-black shadow">
+        YOU
+      </span>
+    )}
 
-      {/* Avatar */}
-      <img
-        src={profilePic}
-        alt={`${title} avatar`}
-        className="h-10 w-10 rounded-full ring-1 ring-white/40 object-cover"
-        loading="lazy"
-      />
+    {/* avatar */}
+    <img
+      src={profilePic}
+      alt={`${title} avatar`}
+      className="h-10 w-10 rounded-full ring-1 ring-white/40 object-cover"
+      loading="lazy"
+    />
 
-      {/* Info */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <p className="truncate text-sm font-medium text-white">{title}</p>
-        <div className="flex items-baseline gap-1">
-          <CurrencyLeaderBoardIcon />
-          <span className="text-xs text-gray-300">Profit</span>
-          <span className="text-sm font-semibold text-primary">{money(amount)}</span>
-        </div>
+    {/* player info */}
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <p className="truncate text-sm font-medium text-white">{title}</p>
+      <div className="flex items-baseline gap-1">
+        <CurrencyLeaderBoardIcon />
+        <span className="text-xs text-gray-300">Profit</span>
+        <span className="text-sm font-semibold text-primary">{money(amount)}</span>
       </div>
+    </div>
 
-      {/* Rank */}
-      <h3 className="font-designer text-2xl text-white">
-        {rank}
-        <span className="text-[0.8rem]">{suffix(rank)}</span>
-      </h3>
-    </motion.div>
-
-    {/* Divider */}
-    {!isLast && <div className="mx-4 border-b border-white/10" />}
-  </div>
+    {/* Rank */}
+    <h3 className="font-designer text-2xl text-white">
+      {rank}
+      <span className="text-[0.8rem]">{suffix(rank)}</span>
+    </h3>
+  </motion.div>
 );
 
-/* ------------------------------------------------------------------ */
-/*                            EXPORT                                  */
-/* ------------------------------------------------------------------ */
+/* --------------------------- EXPORT ----------------------------- */
 const TopCard: React.FC<CardData> = (props) =>
   props.rank <= 3 ? <PodiumCard {...props} /> : <RowCard {...props} />;
 

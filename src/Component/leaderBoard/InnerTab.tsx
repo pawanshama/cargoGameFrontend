@@ -1,6 +1,6 @@
 /* ===========================================================================
    src/Component/leaderBoard/InnerTab.tsx
-   ⬇️ Copie-colle intégralement ce fichier – prêt à l’emploi
+   👉 Version “pixel-perfect” — palettes corrigées, espacement affiné, flèche bleue
    ========================================================================== */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -10,7 +10,7 @@ import ProfilePic from "../../assets/images/dummyProfile.png";
 import TopCard from "./TopCard";
 
 /* -------------------------------------------------------------------------- */
-/*                               TYPES & MOCKS                                */
+/*                                   TYPES                                    */
 /* -------------------------------------------------------------------------- */
 export interface InnerTabProps {
   period: "all time" | "daily" | "weekly" | "monthly";
@@ -23,7 +23,9 @@ interface Player {
   profilePic: string;
 }
 
-/* → remplace mockPlayers par tes données backend */
+/* -------------------------------------------------------------------------- */
+/*                                MOCK DATA                                   */
+/* -------------------------------------------------------------------------- */
 const mockPlayers: Player[] = Array.from({ length: 50 }, (_, i) => ({
   rank: i + 1,
   title: i === 3 ? "amazo_777" : "Davislatimp",
@@ -32,51 +34,48 @@ const mockPlayers: Player[] = Array.from({ length: 50 }, (_, i) => ({
 }));
 
 /* -------------------------------------------------------------------------- */
-/*                                   COMPONENT                                */
+/*                                COMPONENT                                   */
 /* -------------------------------------------------------------------------- */
 const InnerTab: React.FC<InnerTabProps> = ({ period }) => {
-  /* ----- CONSTANTS ----- */
-  const currentUserRank = 4;                           // TODO: bind store/API
+  const currentUserRank = 4; // TODO: replace with store / API
   const currentPlayer   = mockPlayers.find(p => p.rank === currentUserRank);
 
-  /* ----- SPLIT DATA ----- */
+  /* découpe podium / reste */
   const [podium, others] = useMemo(() => {
-    const [first, second, third, ...rest] = mockPlayers;
-    return [[first, second, third], rest] as const;
+    const [g, s, b, ...rest] = mockPlayers;
+    return [[g, s, b], rest] as const;
   }, []);
 
-  /* ----- SCROLL-UP LOGIC ----- */
-  const anchorRef   = useRef<HTMLDivElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const [showUp,    setShowUp] = useState(false);
+  /* scroll-top */
+  const anchor = useRef<HTMLDivElement>(null);
+  const sentinel = useRef<HTMLDivElement>(null);
+  const [showUp, setShowUp] = useState(false);
 
   useEffect(() => {
     const io = new IntersectionObserver(
-      ([entry]) => setShowUp(!entry.isIntersecting),
-      { threshold: 0.2 },
+      ([e]) => setShowUp(!e.isIntersecting),
+      { threshold: 0.25 },
     );
-    sentinelRef.current && io.observe(sentinelRef.current);
+    sentinel.current && io.observe(sentinel.current);
     return () => io.disconnect();
   }, []);
 
-  const scrollToTop = () =>
-    anchorRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToTop = () => anchor.current?.scrollIntoView({ behavior: "smooth" });
 
   /* ---------------------------------------------------------------------- */
-  /*                                   RENDER                               */
+  /*                                   UI                                   */
   /* ---------------------------------------------------------------------- */
   return (
     <section className="relative flex w-full flex-col gap-6">
-      {/* anchor haut de liste */}
-      <div ref={anchorRef} />
+      <div ref={anchor} />
 
-      {/* ------------------------- PODIUM ------------------------- */}
+      {/* ------------------------ PODIUM ------------------------ */}
       <motion.ol
         layout
-        initial={{ opacity: 0, y: 24 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.28, ease: "easeOut" }}
-        className="mx-auto grid w-full max-w-[350px] grid-cols-3 items-end gap-3"
+        transition={{ duration: 0.28 }}
+        className="mx-auto grid w-full max-w-[350px] grid-cols-3 items-end gap-2"
       >
         {podium.map(
           user =>
@@ -90,47 +89,46 @@ const InnerTab: React.FC<InnerTabProps> = ({ period }) => {
         )}
       </motion.ol>
 
-      {/* --------------------- MAIN LIST --------------------- */}
-      <div className="flex flex-col overflow-hidden rounded-2xl border border-white/15 bg-white/5/30 backdrop-blur-md px-4 py-3">
-        {/* current user highlight (if not podium) */}
+      {/* --------------------- MAIN LIST ---------------------- */}
+      <div className="flex flex-col gap-2 overflow-hidden rounded-2xl border border-white/12 bg-white/5/25 px-4 py-3 backdrop-blur-md">
         {currentPlayer && currentPlayer.rank > 3 && (
-          <TopCard key="me" {...currentPlayer} isCurrentUser />
+          <TopCard {...currentPlayer} isCurrentUser />
         )}
 
-        {others.map((user, idx) => (
-          <div key={user.rank} ref={idx === 7 ? sentinelRef : undefined}>
+        {others.map((u, i) => (
+          <div key={u.rank} ref={i === 7 ? sentinel : undefined}>
             <TopCard
-              {...user}
-              isCurrentUser={user.rank === currentUserRank}
-              isLast={idx === others.length - 1}
+              {...u}
+              isCurrentUser={u.rank === currentUserRank}
+              isLast={i === others.length - 1}
             />
           </div>
         ))}
       </div>
 
-      {/* ------------------ SCROLL-TO-TOP BTN ------------------ */}
+      {/* ----------------- SCROLL UP BUTTON ----------------- */}
       <AnimatePresence>
         {showUp && (
           <motion.button
-            key="scrollUp"
-            initial={{ opacity: 0, scale: 0.7 }}
+            key="up"
+            initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.7 }}
-            transition={{ duration: 0.25 }}
+            exit={{ opacity: 0, scale: 0.6 }}
+            transition={{ duration: 0.22 }}
             onClick={scrollToTop}
             aria-label="Scroll to top"
-            className="fixed bottom-[120px] right-6 z-50 rounded-full bg-gradient-to-tr from-[#22e584] to-[#2CFD95] p-3 text-black shadow-xl backdrop-blur-md active:scale-95"
+            className="fixed bottom-[122px] right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-[#00e1ff]/90 backdrop-blur shadow-xl active:scale-95"
           >
-            <ArrowUpCircle className="h-6 w-6" />
+            <ArrowUpCircle className="h-6 w-6 text-black/90" />
           </motion.button>
         )}
       </AnimatePresence>
 
-      {/* footer padding pour TabBar Telegram */}
-      <div className="h-[180px]" />
+      {/* padding bas pour tab-bar */}
+      <div className="h-[170px]" />
 
-      {/* période info (facultatif) */}
-      <p className="absolute bottom-[140px] left-1/2 -translate-x-1/2 text-[11px] font-medium tracking-wide text-white/60">
+      {/* tag période */}
+      <p className="pointer-events-none absolute bottom-[150px] left-1/2 -translate-x-1/2 text-[11px] font-medium tracking-wide text-white/60">
         {period} leaderboard
       </p>
     </section>
