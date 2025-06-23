@@ -1,75 +1,82 @@
 /* src/Component/pages/FreeBetMissions/index.tsx */
 
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Header from "../../includes/Header";
-import Footer from "../../includes/Footer";
-import Mission1 from "./Mission1";
-import Mission2 from "./Mission2";
-import PopupMission1 from "./PopupMission1";
-import PopupMission2 from "./PopupMission2";
+import { useEffect, useState, useCallback } from "react";
+import { useNavigate }   from "react-router-dom";
+import Header            from "../../includes/Header";
+import Footer            from "../../includes/Footer";
+import Mission1          from "./Mission1";
+import Mission2          from "./Mission2";
+import PopupMission1     from "./PopupMission1";
+import PopupMission2     from "./PopupMission2";
 
-/* ---------- Config ---------- */
+/* ----- configuration des cartes ----- */
 const missions = [
   { id: 1, title: "Double Your First Deposit!" },
   { id: 2, title: "Invite Your Friends and Get Up to $150" },
 ];
 
-/* ---------- Composant ---------- */
+const API = import.meta.env.VITE_BACKEND_URL;
+
+/* -------------------------------------------------------------------------- */
+/*                                   PAGE                                     */
+/* -------------------------------------------------------------------------- */
 const FreeBetMissions: React.FC = () => {
-  const [activeMission, setActiveMission] = useState<number | null>(null);
-  const [activePopupMission, setActivePopupMission] = useState<number | null>(null);
+  /* ------------------------------------------------ state ------------------------------------------------ */
+  const [activeMission,   setActiveMission]   = useState<number | null>(null);
+  const [activePopup,     setActivePopup]     = useState<number | null>(null);
 
-  const [hasDeposited, setHasDeposited] = useState(false);
-  const [depositAmount, setDepositAmount] = useState<number>();
+  const [hasDeposited,    setHasDeposited]    =
+    useState<boolean | undefined>(undefined);     // ← undefined = loading
+  const [depositAmount,   setDepositAmount]   = useState<number | undefined>();
 
-  const [invitedCount, setInvitedCount] = useState(0);
-  const [totalCashback, setTotalCashback] = useState(0);
-  const [yourCashback, setYourCashback] = useState(0);
-  const [friendsCashback, setFriendsCashback] = useState(0);
+  const [invitedCount,    setInvited]         = useState(0);
+  const [totalCashback,   setTotalCb]         = useState(0);
+  const [yourCashback,    setYourCb]          = useState(0);
+  const [friendsCashback, setFriendsCb]       = useState(0);
 
   const navigate = useNavigate();
 
-  /* ---------- Effet : fetch missions ---------- */
-  useEffect(() => {
-    const initData = window.Telegram?.WebApp.initData;
+  /* ------------------------------------------------ fetch ------------------------------------------------ */
+  const initData = window.Telegram?.WebApp.initData;
+
+  const fetchDepositStatus = useCallback(async () => {
     if (!initData) return;
+    try {
+      const r   = await fetch(`${API}/api/user/deposit-status`, {
+        headers: { Authorization: `tma ${initData}` },
+      });
+      const j   = await r.json();
+      setHasDeposited(j.hasDeposited);
+      setDepositAmount(j.depositAmount);
+    } catch (err) {
+      console.error("❌ deposit-status :", err);
+      setHasDeposited(false);
+    }
+  }, [initData]);
 
-    const fetchDepositStatus = async () => {
-      try {
-        const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/user/deposit-status`,
-          { headers: { Authorization: `tma ${initData}` } },
-        );
-        const data = await res.json();
-        setHasDeposited(data.hasDeposited);
-        setDepositAmount(data.depositAmount);
-      } catch (err) {
-        console.error("❌ deposit-status :", err);
-      }
-    };
+  const fetchInviteStats = useCallback(async () => {
+    if (!initData) return;
+    try {
+      const r = await fetch(`${API}/api/user/invite-status`, {
+        headers: { Authorization: `tma ${initData}` },
+      });
+      const j = await r.json();
+      setInvited(j.invitedCount     ?? 0);
+      setTotalCb(j.totalCashback    ?? 0);
+      setYourCb(j.yourCashback      ?? 0);
+      setFriendsCb(j.friendsCashback?? 0);
+    } catch (err) {
+      console.error("❌ invite-status :", err);
+    }
+  }, [initData]);
 
-    const fetchInviteStats = async () => {
-      try {
-        const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/user/invite-status`,
-          { headers: { Authorization: `tma ${initData}` } },
-        );
-        const data = await res.json();
-        setInvitedCount(data.invitedCount ?? 0);
-        setTotalCashback(data.totalCashback ?? 0);
-        setYourCashback(data.yourCashback ?? 0);
-        setFriendsCashback(data.friendsCashback ?? 0);
-      } catch (err) {
-        console.error("❌ invite-status :", err);
-      }
-    };
-
+  /* 1ᵉʳ chargement */
+  useEffect(() => {
     fetchDepositStatus();
     fetchInviteStats();
-  }, []);
+  }, [fetchDepositStatus, fetchInviteStats]);
 
-  /* ---------- Rendu ---------- */
+  /* ------------------------------------------------ render ------------------------------------------------ */
   return (
     <div className="relative w-full min-h-screen bg-gradient-to-b from-[#160028] to-[#2b1048] text-white flex flex-col pb-28">
       <Header
@@ -84,14 +91,14 @@ const FreeBetMissions: React.FC = () => {
         Exciting Rewards Await! Complete Missions and Earn Free Bets!
       </p>
 
-      {/* ---------- Cartes missions ---------- */}
+      {/* ---------------- CARTES ---------------- */}
       <div className="px-4 mt-6 flex flex-col gap-5">
         {missions.map((m) => (
           <button
             key={m.id}
             type="button"
-            className="w-full border border-[#9752b9] rounded-xl px-5 py-4 flex justify-between items-center active:scale-95 transition-transform duration-100"
-            onClick={() => setActiveMission(m.id)}         // ← garde supprimée
+            className="w-full border border-[#9752b9] rounded-xl px-5 py-4 flex justify-between items-center active:scale-95 transition-transform"
+            onClick={() => setActiveMission(m.id)}
           >
             <div className="flex items-center gap-3">
               <img src="/assets/rocket.webp" alt="" className="w-10 h-10" />
@@ -109,11 +116,11 @@ const FreeBetMissions: React.FC = () => {
         ))}
       </div>
 
-      {/* ---------- Overlays missions ---------- */}
+      {/* ---------------- OVERLAYS ---------------- */}
       {activeMission === 1 && (
         <Mission1
           onBack={() => setActiveMission(null)}
-          onCollect={() => setActivePopupMission(1)}
+          onCollect={() => setActivePopup(1)}
           hasDeposited={hasDeposited}
           depositAmount={depositAmount}
         />
@@ -122,7 +129,7 @@ const FreeBetMissions: React.FC = () => {
       {activeMission === 2 && (
         <Mission2
           onBack={() => setActiveMission(null)}
-          onCollect={() => setActivePopupMission(2)}
+          onCollect={() => setActivePopup(2)}
           invitedCount={invitedCount}
           totalCashback={totalCashback}
           yourCashback={yourCashback}
@@ -130,19 +137,19 @@ const FreeBetMissions: React.FC = () => {
         />
       )}
 
-      {/* ---------- Pop-ups collecte ---------- */}
-      {activePopupMission === 1 && (
+      {/* ---------------- POP-UPS ---------------- */}
+      {activePopup === 1 && (
         <PopupMission1
           onClose={() => {
-            setActivePopupMission(null);
+            setActivePopup(null);
             navigate("/bet");
           }}
         />
       )}
-      {activePopupMission === 2 && (
+      {activePopup === 2 && (
         <PopupMission2
           onClose={() => {
-            setActivePopupMission(null);
+            setActivePopup(null);
             navigate("/bet");
           }}
         />

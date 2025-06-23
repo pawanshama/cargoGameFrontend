@@ -1,9 +1,6 @@
-/* src/Component/pages/Wallet/Withdraw.tsx
-   – Glass / Neon + Framer-motion                                           */
-
 import { useEffect, useState } from "react";
-import { useTonWallet } from "@tonconnect/ui-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useUser } from "../context/UserContext";
 import Button from "../common/Button";
 
 interface WithdrawProps {
@@ -12,10 +9,13 @@ interface WithdrawProps {
     key: string
   ) => (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleWithdraw: () => void;
+  /** déclenché par Deposit quand un dépôt est validé */
   refreshWallet: () => void;
 }
 
-const MIN_TON = 0.1;
+const MIN_TON = 0.1;                // 0.1 TON = seuil mini
+
+/* -------------------------------------------------------------------------- */
 
 const Withdraw: React.FC<WithdrawProps> = ({
   inputValues,
@@ -23,30 +23,48 @@ const Withdraw: React.FC<WithdrawProps> = ({
   handleWithdraw,
   refreshWallet,
 }) => {
-  const [status,  setStatus]  = useState<"idle" | "sending" | "done" | "error">(
-    "idle",
+  /* ------------------------------------------------------------------ state */
+  const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">(
+    "idle"
   );
-  const [balance, setBal]     = useState("0.000");
-  const wallet                = useTonWallet();
+  const [balance, setBalance] = useState("0.000");       // solde in-game en TON
+  const { user }               = useUser();
 
-  /* ---------- fetch balance ---------- */
+  /* ---------------------------------------------------- 1. fetch in-game balance */
+  const fetchGameBalance = async () => {
+    if (!user) return;
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData) return;
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/wallet/me`,
+        { headers: { Authorization: `tma ${initData}` } }
+      );
+      const { data, wallet } = await res.json(); // supporte apiSuccess ou objet brut
+
+      const paidRaw =
+        (data?.wallet?.paidcoins ?? wallet?.paidcoins ?? 0) as number; // nanoTon
+      setBalance((paidRaw / 1e9).toFixed(3));          // → TON
+    } catch (e) {
+      console.error("❌ fetchGameBalance:", e);
+      setBalance("N/A");
+    }
+  };
+
+  /* 1a. initial + auto-refresh toutes 15 s */
   useEffect(() => {
-    const fetchBal = async () => {
-      if (!wallet?.account?.address) return;
-      try {
-        const r = await fetch(
-          `https://toncenter.com/api/v2/getAddressBalance?address=${wallet.account.address}`,
-        );
-        const { result } = await r.json();
-        setBal((Number(result) / 1e9).toFixed(3));
-      } catch {
-        setBal("N/A");
-      }
-    };
-    fetchBal();
-  }, [wallet]);
+    fetchGameBalance();
+    const id = setInterval(fetchGameBalance, 15_000);
+    return () => clearInterval(id);
+  }, [user]);
 
-  /* ---------- helpers ---------- */
+  /* 1b. refresh manuel (Deposit) */
+  useEffect(() => {
+    fetchGameBalance();
+  }, [refreshWallet]);
+
+  /* ---------------------------------------------------- 2. helpers */
   const setMax = () =>
     handleInputChange("amount")({
       target: { value: balance },
@@ -71,21 +89,22 @@ const Withdraw: React.FC<WithdrawProps> = ({
       const res = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/wallet/withdraw`,
         {
-          method : "POST",
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization : `tma ${initData}`,
+            Authorization: `tma ${initData}`,
           },
-          body: JSON.stringify({ amount: Math.round(amount * 100) }),
-        },
+          body: JSON.stringify({ amount: Math.round(amount * 100) }), // CENT TON
+        }
       );
-      const data = await res.json();
+      const { success } = await res.json();
 
-      if (res.ok && data.success) {
+      if (res.ok && success) {
+        // 🔊
         new Audio("/assets/sounds/23.withdraw.mp3").play().catch(() => {});
         setStatus("done");
-        refreshWallet();
-        handleWithdraw();
+        fetchGameBalance();   // refresh imm.
+        handleWithdraw();     // modal « success »
       } else {
         setStatus("error");
       }
@@ -94,7 +113,7 @@ const Withdraw: React.FC<WithdrawProps> = ({
     }
   };
 
-  /* ---------- UI ---------- */
+  /* ------------------------------------------------------------------ render */
   return (
     <motion.form
       initial={{ opacity: 0, y: 20 }}
@@ -105,15 +124,16 @@ const Withdraw: React.FC<WithdrawProps> = ({
         submit();
       }}
     >
-      {/* balance */}
+      {/* ---------- balance ---------- */}
       <div className="w-full space-y-6 mb-[clamp(1rem,7vw,2.625rem)]">
-        <Field label="TON Available Balance" value={`${balance} TON`} />
+        <Field label="In-game balance" value={`${balance} TON`} />
 
-        {/* amount */}
+        {/* ---------- amount ---------- */}
         <div>
           <label htmlFor="amount" className="text-sm text-gray-300 mb-1">
             Amount to withdraw
           </label>
+
           <div className="flex items-center bg-[#29153B]/80 border border-[#8646A4]/40 rounded-xl px-4 py-2">
             <motion.input
               id="amount"
@@ -126,6 +146,7 @@ const Withdraw: React.FC<WithdrawProps> = ({
               whileFocus={{ borderColor: "#8C4DFF" }}
               className="flex-1 bg-transparent text-sm placeholder-gray-400 focus:outline-none"
             />
+
             <button
               type="button"
               onClick={setMax}
@@ -137,15 +158,16 @@ const Withdraw: React.FC<WithdrawProps> = ({
         </div>
       </div>
 
-      {/* CTA + feedback */}
+      {/* ---------- CTA + feedback ---------- */}
       <div className="flex flex-col items-center gap-3">
         <motion.div
           animate={
-            status === "sending"
-              ? { scale: [1, 1.08, 1] }
-              : { scale: 1 }
+            status === "sending" ? { scale: [1, 1.08, 1] } : { scale: 1 }
           }
-          transition={{ repeat: status === "sending" ? Infinity : 0, duration: 1 }}
+          transition={{
+            repeat: status === "sending" ? Infinity : 0,
+            duration: 1,
+          }}
         >
           <Button
             label={status === "sending" ? "Processing…" : "Withdraw"}
@@ -210,7 +232,7 @@ const Withdraw: React.FC<WithdrawProps> = ({
   );
 };
 
-/* ---------- tiny Field --------- */
+/* --------------------- tiny Field --------------------- */
 const Field = ({ label, value }: { label: string; value: string }) => (
   <div>
     <label className="text-sm text-gray-300 mb-1 block">{label}</label>

@@ -82,7 +82,7 @@ const Wallet: React.FC = () => {
                   </p>
                   <button
                     onClick={() => tonUI.disconnect()}
-                    className="w-full py-2 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 font-bold hover:opacity-90 ripple"
+                    className="w-full py-2 rounded-xl bg-gradient-to-r from-[#00aeff] to-purple-400 font-bold hover:opacity-90 ripple"
                   >
                     🔄 Change wallet
                   </button>
