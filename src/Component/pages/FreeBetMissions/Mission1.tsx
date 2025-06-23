@@ -1,9 +1,9 @@
 /* src/Component/pages/FreeBetMissions/Mission1.tsx
-   – version TypeScript safe (plus d’erreur TS2339) */
+   – s’affiche instantanément, plus d’erreur TS2345            */
 
 import { useEffect, useState } from "react";
 import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
-import Mission1AfterDeposit from "./Mission1AfterDeposit";
+import Mission1AfterDeposit  from "./Mission1AfterDeposit";
 import { io as socketIOClient } from "socket.io-client";
 
 interface Mission1Props {
@@ -19,103 +19,71 @@ const Mission1: React.FC<Mission1Props> = ({
   hasDeposited: initialHasDeposited,
   depositAmount: initialDepositAmount,
 }) => {
-  const [hasDeposited, setHasDeposited] = useState(initialHasDeposited);
+  /* -------- affichage -------- */
+  const [hasDeposited, setHasDeposited]   = useState(initialHasDeposited);
   const [depositAmount, setDepositAmount] = useState<number | null>(
     initialDepositAmount ?? null,
   );
-  const [loading, setLoading] = useState(true);
 
-  /* -------------------------------------------------------------------- */
-  /*                         Effet d’initialisation                        */
-  /* -------------------------------------------------------------------- */
+  /* -------- init -------- */
   useEffect(() => {
-    /* Raccourcis Telegram */
-    const tg = window.Telegram?.WebApp;
-    const initData = tg?.initData;
-    const telegramId: number | undefined = (tg?.initDataUnsafe as any)?.user?.id;
+    const tg         = window.Telegram?.WebApp;
+    const initData   = tg?.initData;
+    const telegramId = (tg?.initDataUnsafe as any)?.user?.id as
+                       number | undefined;
 
-    console.log("📦 initData :", initData);
-    console.log("👤 telegramId :", telegramId);
+    if (!initData || !telegramId) return;
 
-    /* Si infos manquantes → on stoppe tout */
-    if (!initData || !telegramId) {
-      console.error("❌ initData ou telegramId manquant.");
-      setLoading(false);
-      return;
-    }
-
-    /* ---------- 1. Fonction de fetch déposits ---------- */
+    /* -- vérifie le premier dépôt -- */
     const fetchDeposit = async (): Promise<boolean> => {
       try {
         const res = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/api/user/deposit-status`,
           { headers: { Authorization: `tma ${initData}` } },
         );
-
-        if (!res.ok) {
-          console.error("❌ HTTP deposit-status :", await res.text());
-          return false;
-        }
+        if (!res.ok) return false;
 
         const body = await res.json();
-        console.log("🎯 Résultat deposit-status :", body);
-
         if (body?.hasDeposited && typeof body.depositAmount === "number") {
           setHasDeposited(true);
           setDepositAmount(body.depositAmount);
           return true;
         }
-      } catch (err) {
-        console.error("❌ Exception fetchDeposit:", err);
-      }
+      } catch {/* ignore */}
       return false;
     };
 
-    /* ---------- 2. Appel immédiat + retry (30 s max) ---------- */
-    fetchDeposit().then((ok) => {
+    /* -- appel immédiat + retry (5 s, max 6) -- */
+    (async () => {
+      const ok = await fetchDeposit();
       if (!ok) {
         let tries = 0;
         const id = setInterval(async () => {
-          const success = await fetchDeposit();
+          const done = await fetchDeposit();
           tries += 1;
-          if (success || tries >= 6) clearInterval(id);
-        }, 5000);
+          if (done || tries >= 6) clearInterval(id);
+        }, 5_000);
       }
+    })();
+
+    /* -- WebSocket first-deposit -- */
+    const socket = socketIOClient(import.meta.env.VITE_BACKEND_URL, {
+      query: { telegramId: telegramId.toString() },
+      transports: ["websocket"],
     });
 
-    /* ---------- 3. WebSocket écoute "first-deposit" ---------- */
-    const socket = socketIOClient(
-      import.meta.env.VITE_BACKEND_URL,
-      {
-        query: { telegramId: telegramId.toString() },
-        transports: ["websocket"],
-      },
-    );
-
-    socket.on("connect", () => console.log("🔌 WebSocket connecté"));
-    socket.on("disconnect", () => console.log("📴 WebSocket déconnecté"));
-
-    socket.on("first-deposit", (payload: { amount: number }) => {
-      console.log("🎁 Event first-deposit :", payload);
+    socket.on("first-deposit", (p: { amount: number }) => {
       setHasDeposited(true);
-      setDepositAmount(payload.amount / 100); // si `amount` est en cents
-      setLoading(false);
+      setDepositAmount(p.amount);          // déjà en cents
     });
 
-    /* ---------- 4. Cleanup ---------- */
+    /* cleanup – retourne void */
     return () => {
       socket.disconnect();
-      console.log("🧼 Socket proprement fermé");
     };
-  }, []); // ← exécuter une seule fois au montage
+  }, []);
 
-  /* -------------------------------------------------------------------- */
-  /*                               Render                                 */
-  /* -------------------------------------------------------------------- */
-  if (loading) {
-    return <div className="text-white text-center mt-10">Loading...</div>;
-  }
-
+  /* -------- rendu -------- */
   return hasDeposited && depositAmount !== null ? (
     <Mission1AfterDeposit
       onBack={onBack}
