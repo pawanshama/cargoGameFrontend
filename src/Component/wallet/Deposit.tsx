@@ -1,187 +1,175 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useUser } from "../context/UserContext";
+/*  src/Component/pages/Wallet/Deposit.tsx
+    — version sans warning TS6133                                 */
+
+import { useEffect, useRef, useState } from "react";
 import { useTonWallet, useTonConnectUI } from "@tonconnect/ui-react";
-import Button from "../common/Button";
 import { Address } from "@ton/core";
+import Button from "../common/Button";
 
 interface DepositProps {
   refreshWallet: () => void;
 }
 
-const DEPOSIT_ADDRESS = "UQCcgQqpCCWy3YEzLLqRRQowXf5-YUC8nbPYP--WQm3dI8E8";
+const DEPOSIT_ADDRESS =
+  "UQCcgQqpCCWy3YEzLLqRRQowXf5-YUC8nbPYP--WQm3dI8E8";
 
 const Deposit: React.FC<DepositProps> = ({ refreshWallet }) => {
-  const { user } = useUser();
-  const wallet = useTonWallet();
-  const [tonConnectUI] = useTonConnectUI();
-  const [amountTON, setAmountTON] = useState("");
-  const [walletBalance, setWalletBalance] = useState<null | string>(null);
-  const [status, setStatus] = useState("");
-  const [showDepositButton, setShowDepositButton] = useState(false);
+  /* TonConnect */
+  const wallet               = useTonWallet();
+  const [tonConnectUI]       = useTonConnectUI();
+
+  /* UI state */
+  const [amount, setAmount]  = useState("");
+  const [balance, setBal]    = useState<string | null>(null);
+  const [status,  setStatus] = useState("");
+
   const hasSentWallet = useRef(false);
 
-  const isWalletConnected = !!wallet?.account?.address;
+  const isConnected = !!wallet?.account?.address;
+  const rawAddr     = wallet?.account?.address;
+  const shortAddr   = rawAddr
+    ? Address.parse(rawAddr).toString({ bounceable: false, testOnly: false })
+    : "";
 
-  const rawAddress = wallet?.account?.address;
-  const friendlyAddress = rawAddress
-    ? Address.parse(rawAddress).toString({ bounceable: false, testOnly: false })
-    : null;
-
+  /* 1️⃣  Envoie l’adresse (1 seule fois) */
   useEffect(() => {
-    if (isWalletConnected && !hasSentWallet.current) {
-      hasSentWallet.current = true;
+    if (!isConnected || hasSentWallet.current) return;
+    hasSentWallet.current = true;
 
-      const initData = window.Telegram?.WebApp?.initData;
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/wallet/connect`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `tma ${window.Telegram?.WebApp?.initData}`,
+      },
+      body: JSON.stringify({ walletAddress: shortAddr }),
+    }).catch(console.error);
+  }, [isConnected, shortAddr]);
 
-      fetch("https://corgi-in-space-backend-production.up.railway.app/api/wallet/connect", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `tma ${initData}`,
-        },
-        body: JSON.stringify({
-          walletAddress: Address.parse(wallet.account.address).toString({
-            bounceable: false,
-            testOnly: false,
-          }),
-        }),
-      })
-        .then((res) => res.json())
-        .then((data) => console.log("✅ Wallet saved:", data))
-        .catch((err) => console.error("❌ Wallet send error:", err));
-    }
-  }, [wallet, user]);
-
+  /* 2️⃣  Solde TON (debounce 400 ms) */
   useEffect(() => {
-    const fetchBalance = async () => {
-      if (!isWalletConnected) return;
+    if (!isConnected) return;
+    const id = setTimeout(async () => {
       try {
-        const res = await fetch(
-          `https://toncenter.com/api/v2/getAddressBalance?address=${wallet.account.address}`
+        const r = await fetch(
+          `https://toncenter.com/api/v2/getAddressBalance?address=${rawAddr}`,
         );
-        const data = await res.json();
-        const balanceTon = Number(data.result) / 1e9;
-        setWalletBalance(balanceTon.toFixed(3));
-      } catch (err) {
-        console.error("❌ Balance fetch error:", err);
-        setWalletBalance("N/A");
+        const { result } = await r.json();
+        setBal((Number(result) / 1e9).toFixed(3));
+      } catch {
+        setBal("N/A");
       }
-    };
+    }, 400);
+    return () => clearTimeout(id);
+  }, [isConnected, rawAddr]);
 
-    fetchBalance();
-  }, [wallet]);
-
-  useEffect(() => {
-    setShowDepositButton(isWalletConnected);
-  }, [isWalletConnected]);
-
+  /* 3️⃣  Dépôt */
   const handleDeposit = async () => {
-    if (!amountTON || isNaN(Number(amountTON))) {
-      return alert("Invalid amount");
-    }
-
-    const playSound = () => {
-      const audio = new Audio("/assets/sounds/10.Moneyadded.mp3");
-      audio.play().catch((err) => console.error("❌ Audio error:", err));
-    };
+    const ton = parseFloat(amount);
+    if (!ton || ton <= 0) return alert("Enter a valid amount");
 
     try {
       await tonConnectUI.sendTransaction({
         validUntil: Math.floor(Date.now() / 1000) + 300,
         messages: [
-          {
-            address: DEPOSIT_ADDRESS,
-            amount: (parseFloat(amountTON) * 1e9).toFixed(0),
-          },
+          { address: DEPOSIT_ADDRESS, amount: (ton * 1e9).toFixed(0) },
         ],
       });
 
-      playSound(); // 🔊 Jouer le son
-
-      setStatus("✅ Transaction sent, awaiting confirmation...");
+      new Audio("/assets/sounds/10.Moneyadded.mp3").play().catch(() => {});
+      setStatus("🎉 Transaction sent! Processing…");
 
       setTimeout(() => {
         refreshWallet();
-        setStatus("✅ Deposit is being processed!");
-      }, 3000);
-    } catch (err) {
-      console.error("❌ Deposit error:", err);
-      setStatus("❌ Error while sending the transaction.");
+        setStatus("✅ Deposit processed.");
+      }, 3_000);
+    } catch {
+      setStatus("❌ Transaction cancelled.");
     }
   };
 
+  /* --------------------- RENDER --------------------- */
   return (
-    <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto p-4 text-white">
-      {isWalletConnected ? (
-        <div className="w-full space-y-4">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 bg-[#1E1B2F] border border-green-500 rounded-xl px-3 py-2">
-              <span className="text-green-400 text-lg">✅</span>
-              <p className="text-sm text-white font-medium">
-                Your wallet is successfully connected
-              </p>
-            </div>
+    <div className="w-full max-w-[400px] mx-auto p-6 text-white font-lato">
+      {isConnected ? (
+        <>
+          <Banner text="Your wallet is connected" />
 
-            <div>
-              <p className="text-sm text-gray-300 font-semibold mb-1">Address</p>
-              <div className="bg-[#29153B] border border-[#8646A4] rounded-xl px-3 py-2 text-xs text-white break-all font-mono">
-                {friendlyAddress}
-              </div>
-            </div>
+          <Field label="Address"  value={shortAddr} mono />
+          <Field
+            label="Balance"
+            value={balance !== null ? `${balance} TON` : "Loading…"}
+          />
 
-            <div>
-              <p className="text-sm text-gray-300 font-semibold mb-1">Balance</p>
-              <div className="bg-[#29153B] border border-[#8646A4] rounded-xl px-3 py-2 text-sm text-white font-bold">
-                {walletBalance !== null ? `${walletBalance} TON` : "Loading..."}
-              </div>
-            </div>
-
-            <div className="mb-2">
-              <label htmlFor="amount" className="text-sm text-gray-300 font-semibold mb-1 block">
-                Amount
-              </label>
-              <input
-                id="amount"
-                type="text"
-                name="amount"
-                value={amountTON}
-                onChange={(e) => setAmountTON(e.target.value)}
-                placeholder="Enter the amount to deposit"
-                className="w-full bg-[#29153B] border border-[#8646A4] rounded-xl px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8C4DFF]"
-              />
-            </div>
+          {/* montant */}
+          <div className="mt-4">
+            <label htmlFor="amt" className="text-sm text-gray-300 mb-1 block">
+              Amount&nbsp;(TON)
+            </label>
+            <input
+              id="amt"
+              type="number"
+              min="0"
+              step="0.1"
+              value={amount}
+              placeholder="0.00"
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full bg-[#29153B] border border-[#8646A4] rounded-xl px-3 py-2 text-sm placeholder-gray-400 focus:ring-2 focus:ring-[#8C4DFF] outline-none"
+            />
           </div>
 
-          {showDepositButton && (
-            <div className="flex flex-col items-center justify-center gap-2 relative z-0 mt-[-10px]">
-              <div className="z-10">
-                <Button
-                  label="Deposit"
-                  handleButtonClick={handleDeposit}
-                  type="button"
-                />
-              </div>
-              {status && (
-                <p className="text-sm text-white text-center">{status}</p>
-              )}
-            </div>
-          )}
-        </div>
+          {/* bouton + feedback */}
+          <div className="flex flex-col items-center mt-6 gap-1">
+            <Button label="Deposit" handleButtonClick={handleDeposit} />
+            {status && <p className="text-sm">{status}</p>}
+          </div>
+        </>
       ) : (
-        <div className="w-full flex flex-col items-center mt-6">
-          <p className="text-sm text-white mb-2 text-center">
-            Please connect your wallet to make a deposit.
-          </p>
-          <button
-            onClick={() => tonConnectUI.openModal()}
-            className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold py-2 px-6 rounded-xl hover:opacity-90 transition"
-          >
-            🔗 Connect Wallet
-          </button>
-        </div>
+        <ConnectPrompt openModal={() => tonConnectUI.openModal()} />
       )}
     </div>
   );
 };
+
+/* ---------- sous-composants ---------- */
+
+const Banner = ({ text }: { text: string }) => (
+  <div className="flex items-center gap-2 bg-[#1e1b2f] border border-green-500 rounded-xl p-3 text-sm mb-6">
+    <span className="text-green-400 text-lg">✔</span>
+    <span>{text}</span>
+  </div>
+);
+
+interface FieldProps {
+  label: string;
+  value: string;
+  mono?: boolean;
+}
+const Field = ({ label, value, mono = false }: FieldProps) => (
+  <div className="mt-3">
+    <p className="text-sm text-gray-300 mb-1">{label}</p>
+    <div
+      className={`bg-[#29153B] border border-[#8646A4] rounded-xl px-3 py-2 ${
+        mono ? "font-mono break-all text-xs" : "font-bold text-sm"
+      }`}
+    >
+      {value}
+    </div>
+  </div>
+);
+
+const ConnectPrompt = ({ openModal }: { openModal: () => void }) => (
+  <div className="flex flex-col items-center gap-4">
+    <p className="text-[15px] text-center">
+      Connect your wallet to make a deposit.
+    </p>
+    <button
+      onClick={openModal}
+      className="bg-gradient-to-r from-[#5b2bff] to-[#00e1ff] py-2 px-6 rounded-xl font-bold hover:opacity-90 transition"
+    >
+      🔗 Connect Wallet
+    </button>
+  </div>
+);
 
 export default Deposit;
