@@ -1,5 +1,5 @@
 /*  src/Component/pages/OnBoarding.tsx
-    – ultra-responsive • glow • framer-motion                     */
+    – ring toujours centré, ultra-responsive                     */
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -13,11 +13,9 @@ import { authDataSelector } from "../../redux/reducers/userSlice";
 import { useAppSelector }   from "../../redux/hooks";
 
 /* ---------------------------------------------------------------- */
-/*                 Responsive neon progress-ring (SVG)              */
+/*                   Responsive neon progress-ring                  */
 /* ---------------------------------------------------------------- */
-
 const NeonRing = ({ pct }: { pct: number }) => {
-  /* taille : 16 vw min 64 px max 120 px */
   const size   = Math.max(64, Math.min(120, window.innerWidth * 0.16));
   const stroke = 5;
   const r      = (size - stroke) / 2;
@@ -33,16 +31,10 @@ const NeonRing = ({ pct }: { pct: number }) => {
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <defs>
         <linearGradient id="g" gradientTransform="rotate(90)">
-          <stop offset="0%" stopColor="#00ffa2" />
+          <stop offset="0%"   stopColor="#00ffa2" />
           <stop offset="100%" stopColor="#0066ff" />
         </linearGradient>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="3.5" result="c" />
-          <feMerge>
-            <feMergeNode in="c" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
+        <filter id="glow"><feGaussianBlur stdDeviation="3.5" /></filter>
       </defs>
 
       <circle cx="50%" cy="50%" r={r} stroke="#553383" strokeWidth={stroke} opacity={0.35} fill="none" />
@@ -50,13 +42,11 @@ const NeonRing = ({ pct }: { pct: number }) => {
         cx="50%" cy="50%" r={r}
         stroke="url(#g)" strokeWidth={stroke} strokeLinecap="round"
         strokeDasharray={c} strokeDashoffset={off}
-        fill="none" transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        filter="url(#glow)"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        fill="none" filter="url(#glow)"
       />
-
       <circle cx={dotX} cy={dotY} r="4" fill="#fff" />
-      <circle cx={dotX} cy={dotY} r="2" fill="#5c5a6d" />
-
+      <circle cx={dotX} cy={dotY} r="2" fill="#605d73" />
       <text
         x="50%" y="50%" dy=".28em" textAnchor="middle"
         className="fill-white font-bold"
@@ -71,15 +61,15 @@ const NeonRing = ({ pct }: { pct: number }) => {
 /* ---------------------------------------------------------------- */
 /*                              Page                                */
 /* ---------------------------------------------------------------- */
-
 const OnBoarding: React.FC = () => {
   const [pct, setPct]      = useState(0);
-  const start              = useState(() => Date.now())[0];
+  const started            = useState(() => Date.now())[0];
+
   const { isAuthenticated, token, refreshToken, userDetails } =
     useAppSelector(authDataSelector);
   const navigate = useNavigate();
 
-  /* barre 0-90 % */
+  /* 0 → 90 % animation */
   useEffect(() => {
     let i = 0;
     const id = setInterval(() => {
@@ -90,28 +80,25 @@ const OnBoarding: React.FC = () => {
     return () => clearInterval(id);
   }, []);
 
-  /* passage à 100 % puis redirect */
+  /* auth ok → 100 % + redirect */
   useEffect(() => {
     if (!isAuthenticated || !userDetails) return;
 
-    const elapsed = Date.now() - start;
-    const wait    = Math.max(0, 1500 - elapsed);
-
+    const delay = Math.max(0, 1500 - (Date.now() - started));
     const id = setTimeout(() => {
       setPct(100);
       localStorage.setItem("token",        token);
       localStorage.setItem("refreshToken", refreshToken);
       localStorage.setItem("userDetails",  JSON.stringify(userDetails));
       navigate("/bet", { replace: true });
-    }, wait);
+    }, delay);
 
     return () => clearTimeout(id);
-  }, [isAuthenticated, userDetails, token, refreshToken, navigate, start]);
+  }, [isAuthenticated, userDetails, token, refreshToken, navigate, started]);
 
-  /* ---------------------------------- UI --------------------------------- */
-
+  /* -------------------------------- UI ---------------------------------- */
   return (
-    <div className="w-full h-[100dvh] flex flex-col items-center justify-center relative overflow-hidden
+    <div className="w-full h-[100dvh] flex flex-col items-center justify-center overflow-hidden relative
                     bg-gradient-to-br from-[#12001e] via-[#1d0038] to-[#090012]">
 
       {/* halo animé */}
@@ -129,8 +116,7 @@ const OnBoarding: React.FC = () => {
           animate={{ y: 0, opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          className="relative z-10
-                     w-[clamp(220px,60vw,600px)]"      /* fluid width */
+          className="relative z-10 w-[clamp(220px,60vw,600px)]"
         >
           <ImgWithFallback
             src={LogoBigOptimised}
@@ -142,12 +128,12 @@ const OnBoarding: React.FC = () => {
         </motion.div>
       </AnimatePresence>
 
-      {/* ring */}
+      {/* ring – conteneur pleine largeur centré */}
       <motion.div
-        initial={{ y: 28, opacity: 0 }}
+        initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.25 }}
-        className="absolute left-1/2 -translate-x-1/2 top-[74%] sm:top-[76%]"
+        className="absolute top-[74%] sm:top-[78%] w-full flex justify-center"
       >
         <NeonRing pct={pct} />
       </motion.div>
