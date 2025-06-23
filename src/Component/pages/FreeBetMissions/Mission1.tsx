@@ -1,97 +1,110 @@
-/* src/Component/pages/FreeBetMissions/Mission1.tsx */
+/* ===========================================================================
+   src/Component/pages/FreeBetMissions/Mission1.tsx
+   Harmonised with the new design system ✨
+   ========================================================================== */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { io, Socket } from "socket.io-client";
 import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
 import Mission1AfterDeposit  from "./Mission1AfterDeposit";
-import { io, Socket }        from "socket.io-client";
 
 interface Mission1Props {
   onBack: () => void;
   onCollect: () => void;
-  hasDeposited: boolean | undefined;   // undefined = inconnu
+  hasDeposited: boolean | undefined; // undefined ➜ unknown / loading
   depositAmount?: number;
 }
 
+/* ------------------------------------------------------------------ */
+/*                           Main component                           */
+/* ------------------------------------------------------------------ */
 const Mission1: React.FC<Mission1Props> = ({
   onBack,
   onCollect,
-  hasDeposited: initDep,
-  depositAmount: initAmt,
+  hasDeposited: initHasDeposited,
+  depositAmount: initDepositAmt,
 }) => {
-  /* -------- état -------- */
-  const [hasDeposited,  setDep]   = useState<boolean | undefined>(initDep);
-  const [depositAmount, setAmt]   = useState<number | null>(initAmt ?? null);
-  const [loading,       setLoad]  = useState(initDep === undefined);
+  /* --------------------------- state -------------------------- */
+  const [hasDeposited,  setHasDeposited]  = useState(initHasDeposited);
+  const [depositAmount, setDepositAmount] = useState<number | null>(
+    initDepositAmt ?? null,
+  );
+  const [loading,       setLoading]       = useState(
+    initHasDeposited === undefined,
+  );
 
-  /* -------- effet -------- */
+  /* ---------------------- helpers ----------------------------- */
+  const updateStatus = useCallback((has: boolean, amt?: number) => {
+    setHasDeposited(has);
+    if (has && typeof amt === "number") setDepositAmount(amt);
+  }, []);
+
+  /* ----------------------- effects ---------------------------- */
   useEffect(() => {
-    const tg   = window.Telegram?.WebApp;
-    const init = tg?.initData;
-    const uid  = (tg?.initDataUnsafe as any)?.user?.id as number | undefined;
+    /* sync props ➜ state if parent refreshes */
+    setHasDeposited(initHasDeposited);
+    setDepositAmount(initDepositAmt ?? null);
+    setLoading(initHasDeposited === undefined);
+  }, [initHasDeposited, initDepositAmt]);
 
-    /* socket déclaré ici pour être visible dans le cleanup */
-    let socket: Socket | null = null;
+  useEffect(() => {
+    const tg  = window.Telegram?.WebApp;
+    const id  = (tg?.initDataUnsafe as any)?.user?.id as number | undefined;
+    const jwt = tg?.initData;
 
-    /* si infos manquantes, on stoppe tout */
-    if (!init || !uid) {
-      setLoad(false);
-      return () => {};                 // cleanup “vide”
+    if (!id || !jwt) {
+      setLoading(false);
+      return;
     }
 
-    /* ---- vérifie dépôt ---- */
-    const checkDeposit = async () => {
+    let socket: Socket | null = null;
+
+    /* --------- REST check --------- */
+    const fetchStatus = async () => {
       try {
         const r = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/api/user/deposit-status`,
-          { headers: { Authorization: `tma ${init}` } },
+          { headers: { Authorization: `tma ${jwt}` } },
         );
-        if (!r.ok) return false;
+        if (!r.ok) throw new Error();
         const j = await r.json();
-        if (j.hasDeposited && typeof j.depositAmount === "number") {
-          setDep(true);
-          setAmt(j.depositAmount);
-        } else {
-          setDep(false);
-        }
-        setLoad(false);
-        return true;
+        updateStatus(j.hasDeposited, j.depositAmount);
       } catch {
-        setLoad(false);
-        return false;
+        updateStatus(false);
+      } finally {
+        setLoading(false);
       }
     };
 
-    /* appel initial uniquement si parent ne l’a pas encore */
-    if (initDep === undefined) void checkDeposit();
-    else setLoad(false);
+    if (initHasDeposited === undefined) fetchStatus();
+    else setLoading(false);
 
-    /* ---- WebSocket “first-deposit” ---- */
+    /* --------- live socket --------- */
     socket = io(import.meta.env.VITE_BACKEND_URL, {
-      query: { telegramId: String(uid) },
+      query: { telegramId: String(id) },
       transports: ["websocket"],
     });
 
-    socket.on("first-deposit", (p: { amount: number }) => {
-      setDep(true);
-      setAmt(p.amount);
-      setLoad(false);
+    socket.on("first-deposit", ({ amount }: { amount: number }) => {
+      updateStatus(true, amount);
     });
 
-    /* ---- cleanup ---- */
+    /* cleanup */
     return () => {
-      if (socket) socket.disconnect();
+      socket?.disconnect();
     };
-  }, [initDep]);
+  }, [initHasDeposited, updateStatus]);
 
-  /* -------- rendu -------- */
+  /* ----------------------- render ----------------------------- */
   if (loading) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-[#160028]/90 z-50">
-        <p className="text-white animate-pulse">Loading…</p>
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#160028]/80 backdrop-blur">
+        <p className="animate-pulse text-sm text-white/80">Checking mission…</p>
       </div>
     );
   }
 
+  /* after / before variants */
   return hasDeposited && depositAmount !== null ? (
     <Mission1AfterDeposit
       onBack={onBack}
