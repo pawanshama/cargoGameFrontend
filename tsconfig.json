@@ -34,8 +34,15 @@
     /* ---------- Build ---------- */
     "noEmit": true,
     "moduleDetection": "force"
+
+
   },
 
   /* ---------- Fichiers pris en compte ---------- */
-  "include": ["src"]
+  
+  "include": ["src", "src/types"]  //  <-  assurez-vous que le dossier custom est scanné
+
+
+
+  
 }
