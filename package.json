@@ -31,6 +31,7 @@
     "react-spinners": "^0.14.1",
     "redux": "^5.0.1",
     "socket.io-client": "^4.8.1",
+    "swr": "^2.3.3",
     "three": "^0.166.1",
     "ton": "^13.9.0"
   },
