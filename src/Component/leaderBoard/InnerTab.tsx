@@ -9,7 +9,7 @@ import useSWR from "swr";
 
 import TopCard from "./TopCard";
 import ProfileFallback from "../../assets/images/dummyProfile.png";
-import { useAuthStore } from "@/store/authStore";
+import { useAuthStore } from "../../store/authStore";
 
 /* ------------------------------------------------------------------- */
 /* Types                                                                */
