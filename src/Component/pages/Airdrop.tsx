@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Footer from "../includes/Footer";
 import Header from "../includes/Header";
-import { motion } from "framer-motion"; // Pour les animations
+import { motion } from "framer-motion"; // For animations
 
 const AirdropPage = () => {
   const [timeLeft, setTimeLeft] = useState("");
@@ -44,10 +44,10 @@ const AirdropPage = () => {
           },
         });
 
-        setCoinsEarned(prev => {
+        setCoinsEarned((prev) => {
           counter += 1;
           if (counter % 10 === 0) {
-            fetchUserAircoinMetadata(); // Sync toutes les 10s
+            fetchUserAircoinMetadata(); // Sync every 10 seconds
           }
           return prev + 1;
         });
@@ -118,22 +118,30 @@ const AirdropPage = () => {
   }, []);
 
   return (
-    <div className="w-full min-h-screen flex flex-col">
+    <div className="w-full min-h-screen flex flex-col bg-gradient-to-b from-[#160028] via-[#1c0934] to-[#2b1048] text-white">
       <Header pageHeading="Airdrop" />
 
       <div className="px-4 py-6 max-w-3xl mx-auto space-y-10 pb-[10rem] h-[calc(100dvh_-_clamp(6rem,60vw,8.25rem))] overflow-y-auto">
         {/* TIMER */}
-        <div className="w-full rounded-2xl border-2 border-[#00FFB2] p-4 bg-[#1f0238] shadow-[0_0_15px_#00FFB2] text-center">
+        <motion.div
+          className="w-full rounded-2xl border-2 border-[#00FFB2] p-4 bg-[#1f0238] shadow-[0_0_15px_#00FFB2] text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <p className="text-[15px] sm:text-[17px] font-bold text-white uppercase font-designer whitespace-nowrap">
             ⏳ Airdrop ends in:{" "}
             <span className="text-[#00FFB2] inline-block text-center font-mono min-w-[120px]">
               {timeLeft}
             </span>
           </p>
-        </div>
+        </motion.div>
 
         {/* COIN & LEVEL */}
-        <div className="bg-zinc-900 p-6 rounded-2xl shadow-md text-white">
+        <motion.div
+          className="bg-zinc-900 p-6 rounded-2xl shadow-md text-white"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <div className="flex justify-center items-center gap-4 mb-4">
             <div className="w-14 h-14 animate-pulse-orbit rounded-full bg-gradient-to-b from-yellow-200 via-yellow-400 to-yellow-600 border-2 border-yellow-300 flex items-center justify-center shadow-[0_0_15px_rgba(255,223,0,0.7)] text-yellow-900 font-bold text-2xl">
               $
@@ -165,7 +173,7 @@ const AirdropPage = () => {
               You need <strong>{nextLevel.remaining.toLocaleString("en-US")} coins</strong> to reach <strong>{nextLevel.name}</strong>.
             </p>
           )}
-        </div>
+        </motion.div>
 
         {/* Start Farming Button */}
         <div className="w-full text-center">
@@ -202,7 +210,11 @@ const AirdropPage = () => {
         </div>
 
         {/* HOW TO EARN COINS */}
-        <div className="mt-6">
+        <motion.div
+          className="mt-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <h2 className="text-[17px] sm:text-[19px] font-bold text-white uppercase font-designer underline underline-offset-4 decoration-white text-center mb-6">
             🎁 How to earn coins?
           </h2>
@@ -222,7 +234,7 @@ const AirdropPage = () => {
               <em>Example:</em> Score 50 with 0.1 TON → <strong>250 coins</strong> + potential earnings from the match.
             </li>
           </ul>
-        </div>
+        </motion.div>
       </div>
 
       {/* MODAL */}
