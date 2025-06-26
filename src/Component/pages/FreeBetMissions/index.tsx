@@ -1,17 +1,12 @@
-/* --------------------------------------------------------------------------
-   src/Component/pages/FreeBetMissions/index.tsx
-   Ultra-modern, glassmorphic redesign ✨
-   --------------------------------------------------------------------------- */
-
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Rocket, ChevronRight } from "lucide-react";
 
-import Header        from "../../includes/Header";
-import Footer        from "../../includes/Footer";
-import Mission1      from "./Mission1";
-import Mission2      from "./Mission2";
+import Header from "../../includes/Header";
+import Footer from "../../includes/Footer";
+import Mission1 from "./Mission1";
+import Mission2 from "./Mission2";
 import PopupMission1 from "./PopupMission1";
 import PopupMission2 from "./PopupMission2";
 
@@ -31,18 +26,18 @@ const API = import.meta.env.VITE_BACKEND_URL;
 const FreeBetMissions: React.FC = () => {
   /* ------------------------------ local state ------------------------------ */
   const [activeMission, setActiveMission] = useState<number | null>(null);
-  const [activePopup,   setActivePopup]   = useState<number | null>(null);
+  const [activePopup, setActivePopup] = useState<number | null>(null);
 
-  const [hasDeposited,  setHasDeposited]  = useState<boolean | undefined>(); // undefined = loading
+  const [hasDeposited, setHasDeposited] = useState<boolean | undefined>(); // undefined = loading
   const [depositAmount, setDepositAmount] = useState<number | undefined>();
 
-  const [invitedCount,    setInvited]     = useState(0);
-  const [totalCashback,   setTotalCb]     = useState(0);
-  const [yourCashback,    setYourCb]      = useState(0);
-  const [friendsCashback, setFriendsCb]   = useState(0);
+  const [invitedCount, setInvited] = useState(0);
+  const [totalCashback, setTotalCb] = useState(0);
+  const [yourCashback, setYourCb] = useState(0);
+  const [friendsCashback, setFriendsCb] = useState(0);
 
-  const navigate   = useNavigate();
-  const initData   = window.Telegram?.WebApp.initData;
+  const navigate = useNavigate();
+  const initData = window.Telegram?.WebApp.initData;
 
   /* ------------------------------ fetchers ------------------------------ */
   const fetchDepositStatus = useCallback(async () => {
@@ -69,9 +64,9 @@ const FreeBetMissions: React.FC = () => {
         headers: { Authorization: `tma ${initData}` },
       });
       const j = await res.json();
-      setInvited(j.invitedCount      ?? 0);
-      setTotalCb(j.totalCashback     ?? 0);
-      setYourCb(j.yourCashback       ?? 0);
+      setInvited(j.invitedCount ?? 0);
+      setTotalCb(j.totalCashback ?? 0);
+      setYourCb(j.yourCashback ?? 0);
       setFriendsCb(j.friendsCashback ?? 0);
     } catch (err) {
       console.error("❌ invite-status :", err);
@@ -88,7 +83,7 @@ const FreeBetMissions: React.FC = () => {
   /*                                RENDER                                  */
   /* ---------------------------------------------------------------------- */
   return (
-    <div className="relative min-h-screen w-full font-lato text-white bg-gradient-to-b from-[#160028] via-[#1c0934] to-[#2b1048] pb-28 overflow-hidden">
+    <div className="relative w-full font-lato text-white bg-gradient-to-b from-[#160028] via-[#1c0934] to-[#2b1048] pb-28 overflow-hidden">
       {/* ---------- Decorative blobs ---------- */}
       <div className="pointer-events-none absolute -top-20 -left-20 h-96 w-96 rounded-full bg-[#5b2bff]/50 blur-2xl opacity-40" />
       <div className="pointer-events-none absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-[#00e1ff]/40 blur-2xl opacity-30" />
@@ -103,7 +98,8 @@ const FreeBetMissions: React.FC = () => {
 
       {/* ----------------------------- subtitle ---------------------------- */}
       <p className="mx-auto mt-2 max-w-md px-4 text-center text-[15px] text-white/80">
-        Exciting Rewards Await! Complete missions and earn <span className="text-[#00FFB2] font-bold">free bets</span>!
+        Exciting Rewards Await! Complete missions and earn{" "}
+        <span className="text-[#00FFB2] font-bold">free bets</span>!
       </p>
 
       {/* ------------------------- mission cards -------------------------- */}

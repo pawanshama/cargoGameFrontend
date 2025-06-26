@@ -8,11 +8,10 @@ interface Mission1AfterDepositProps {
   depositAmount: number; // 💰 montant du dépôt passé en prop
 }
 
-
-  const playCollectSound = () => {
-    const audio = new Audio("/assets/sounds/10.Moneyadded.mp3");
-    audio.play().catch((err) => console.error("❌ Audio error:", err));
-  };
+const playCollectSound = () => {
+  const audio = new Audio("/assets/sounds/10.Moneyadded.mp3");
+  audio.play().catch((err) => console.error("❌ Audio error:", err));
+};
 
 const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
   onBack,
@@ -20,8 +19,8 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
   depositAmount,
 }) => {
   return (
-    <div className="absolute inset-0 z-50 bg-[#160028] bg-opacity-95 overflow-y-auto">
-      <div className="px-4 pt-[40px] pb-40 h-screen text-center overflow-y-auto">
+    <div className="relative z-50 bg-[#160028] bg-opacity-95 overflow-y-auto min-h-screen">
+      <div className="px-4 pt-[40px] pb-40 flex flex-col items-center justify-start min-h-screen text-center overflow-y-auto">
         <p className="text-[28px] font-bold font-designer text-white uppercase mb-2">
           MISSION 1: DOUBLE YOUR FIRST DEPOSIT!
         </p>
@@ -43,55 +42,50 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
               />
               <p className="text-[#00FFB2] text-[16px] sm:text-[18px] font-bold font-designer whitespace-nowrap text-center">
                 COLLECT {(depositAmount / 100).toFixed(2)} <span className="text-white">Free Bets</span>
-
               </p>
             </div>
-
-            <div className="relative w-full max-w-[90%]">
-              <div className="bg-[#3c1a57] rounded-full h-6 flex items-center px-1 relative z-10">
-                {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`flex-1 h-4 mx-1 rounded-full ${
-                      i === 0 ? "bg-[#00FFB2]" : "bg-[#5e2d82]"
-                    }`}
-                  ></div>
-                ))}
-              </div>
-
-              <div className="absolute bottom-[-12px] left-0 w-full h-4 flex justify-between z-20 px-1">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="w-[20%] flex justify-center">
-                    <div className="w-[1px] h-[14px] bg-[#00FFB2] opacity-50" />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="w-full max-w-[90%] flex justify-between -mt-2 text-xs text-white font-lato z-30 relative">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex flex-col items-center leading-tight text-center w-[20%]">
-                  <span className="text-[11px] text-white mb-[2px]">Bet</span>
-                  <span className="text-[14px] font-bold">${formatFreeBet(depositAmount / 500)}</span>
-                  <span className="text-[#00FFB2] mt-[4px] text-[11px]">Get {formatFreeBet(depositAmount / 500)} Free Bet</span>
-
-
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4">
-              <Button
-  label="Collect"
-  type="button"
-  handleButtonClick={() => {
-    playCollectSound(); // 👈 joue le son
-    onCollect();        // 👈 continue l’action
-  }}
-/>
-
-            </div>
           </div>
+        </div>
+
+        <div className="relative w-full max-w-[90%] mt-10">
+          <div className="bg-[#3c1a57] rounded-full h-6 flex items-center px-1 relative z-10">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className={`flex-1 h-4 mx-1 rounded-full ${
+                  i === 0 ? "bg-[#00FFB2]" : "bg-[#5e2d82]"
+                }`}
+              ></div>
+            ))}
+          </div>
+          <div className="absolute bottom-[-12px] left-0 w-full h-4 flex justify-between z-20 px-1">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="w-[20%] flex justify-center">
+                <div className="w-[1px] h-[14px] bg-[#00FFB2] opacity-50" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="w-full max-w-[90%] flex justify-between -mt-2 text-xs text-white font-lato z-30 relative">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex flex-col items-center leading-tight text-center w-[20%]">
+              <span className="text-[11px] text-white mb-[2px]">Bet</span>
+              <span className="text-[14px] font-bold">${formatFreeBet(depositAmount / 500)}</span>
+              <span className="text-[#00FFB2] mt-[4px] text-[11px]">Get {formatFreeBet(depositAmount / 500)} Free Bet</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4">
+          <Button
+            label="Collect"
+            type="button"
+            handleButtonClick={() => {
+              playCollectSound(); // 👈 joue le son
+              onCollect();        // 👈 continue l’action
+            }}
+          />
         </div>
 
         <p className="font-bold text-white text-lg underline font-designer uppercase text-center mt-10 mb-6">
