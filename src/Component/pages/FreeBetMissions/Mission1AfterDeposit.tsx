@@ -19,8 +19,8 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
   depositAmount,
 }) => {
   return (
-    <div className="relative z-50 bg-[#160028] bg-opacity-95 overflow-y-auto">
-      <div className="px-4 pt-10 pb-8 h-auto text-center overflow-y-auto">
+    <div className="relative z-50 bg-[#160028] bg-opacity-95 overflow-y-auto min-h-screen">
+      <div className="px-4 pt-10 pb-8 h-auto text-center">
         {/* Mission Title */}
         <p className="text-[28px] font-bold font-designer text-white uppercase mb-2">
           MISSION 1: DOUBLE YOUR FIRST DEPOSIT!
@@ -30,26 +30,25 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
           Deposit your first amount and get the same amount in free bets! Achieve milestones to unlock your rewards.
         </p>
 
-        <div className="mt-10">
-          <div className="flex flex-col items-center gap-8">
-            <div
-              onClick={onCollect}
-              className="w-full max-w-[90%] rounded-2xl border-2 border-[#00FFB2] p-4 bg-[#1f0238] shadow-[0_0_15px_#00FFB2] flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform duration-100"
-            >
-              <img
-                src="/assets/Gifticonfreebet.png"
-                alt="Gift"
-                className="w-[30px] h-[30px] object-contain"
-              />
-              <p className="text-[#00FFB2] text-[16px] sm:text-[18px] font-bold font-designer whitespace-nowrap text-center">
-                COLLECT {(depositAmount / 100).toFixed(2)} <span className="text-white">Free Bets</span>
-              </p>
-            </div>
+        {/* Collect Free Bets Section */}
+        <div className="flex justify-center mt-10">
+          <div
+            onClick={onCollect}
+            className="w-full max-w-[80%] lg:max-w-[60%] rounded-2xl border-2 border-[#00FFB2] p-4 bg-[#1f0238] shadow-[0_0_15px_#00FFB2] flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform duration-100"
+          >
+            <img
+              src="/assets/Gifticonfreebet.png"
+              alt="Gift"
+              className="w-[30px] h-[30px] object-contain"
+            />
+            <p className="text-[#00FFB2] text-[16px] sm:text-[18px] font-bold font-designer whitespace-nowrap text-center">
+              COLLECT {(depositAmount / 100).toFixed(2)} <span className="text-white">Free Bets</span>
+            </p>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="relative w-full max-w-[90%] mt-10">
+        <div className="relative w-full max-w-[90%] mt-10 mx-auto">
           <div className="bg-[#3c1a57] rounded-full h-6 flex items-center px-1 relative z-10">
             {[...Array(5)].map((_, i) => (
               <div

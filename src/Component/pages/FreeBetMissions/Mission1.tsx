@@ -9,13 +9,17 @@ interface Mission1Props {
   depositAmount?: number;
 }
 
-const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect, hasDeposited, depositAmount }) => {
+const Mission1: React.FC<Mission1Props> = ({
+  onBack,
+  onCollect,
+  hasDeposited = false,  // Default to false if undefined
+  depositAmount = 0,     // Default to 0 if undefined
+}) => {
   const handleCollect = () => {
-    // Ensure depositAmount is provided before calling onCollect
-    if (depositAmount !== undefined && depositAmount !== null) {
+    if (depositAmount > 0) {
       onCollect(); // Trigger the collect function passed from parent
     } else {
-      console.error("❌ Deposit amount is not available");
+      console.error("❌ Deposit amount is not available or invalid");
     }
   };
 
@@ -27,7 +31,7 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect, hasDeposited, de
         <Mission1AfterDeposit
           onBack={onBack}
           onCollect={handleCollect}
-          depositAmount={depositAmount || 0} // Default to 0 if depositAmount is undefined
+          depositAmount={depositAmount} // Ensure depositAmount is passed
         />
       ) : (
         // Mission 1 Before Deposit
