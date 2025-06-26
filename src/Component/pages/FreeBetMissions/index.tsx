@@ -83,9 +83,9 @@ const FreeBetMissions: React.FC = () => {
   /*                                RENDER                                  */
   /* ---------------------------------------------------------------------- */
   return (
-    <div className="relative w-full font-lato text-white bg-gradient-to-b from-[#160028] via-[#1c0934] to-[#2b1048] pb-28 overflow-hidden">
+    <div className="relative w-full font-lato text-white bg-gradient-to-b from-[#160028] via-[#1c0934] to-[#2b1048] min-h-screen pb-28 overflow-hidden">
       {/* ---------- Decorative blobs ---------- */}
-      <div className="pointer-events-none absolute top-0 left-0 h-[100vh] w-[100vw] rounded-full bg-[#5b2bff]/50 blur-2xl opacity-40" />
+      <div className="pointer-events-none absolute top-0 left-0 h-full w-full rounded-full bg-[#5b2bff]/50 blur-2xl opacity-40" />
       <div className="pointer-events-none absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-[#00e1ff]/40 blur-2xl opacity-30" />
 
       <Header
