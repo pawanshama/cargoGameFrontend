@@ -19,13 +19,14 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
   depositAmount,
 }) => {
   return (
-    <div className="relative z-50 bg-[#160028] bg-opacity-95 overflow-y-auto min-h-screen">
-      <div className="px-4 pt-[40px] pb-40 flex flex-col items-center justify-start min-h-screen text-center overflow-y-auto">
+    <div className="relative z-50 bg-[#160028] bg-opacity-95 overflow-y-auto">
+      <div className="px-4 pt-10 pb-8 h-auto text-center overflow-y-auto">
+        {/* Mission Title */}
         <p className="text-[28px] font-bold font-designer text-white uppercase mb-2">
           MISSION 1: DOUBLE YOUR FIRST DEPOSIT!
         </p>
 
-        <p className="text-sm text-white opacity-80">
+        <p className="text-sm text-white opacity-80 mb-8">
           Deposit your first amount and get the same amount in free bets! Achieve milestones to unlock your rewards.
         </p>
 
@@ -33,7 +34,7 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
           <div className="flex flex-col items-center gap-8">
             <div
               onClick={onCollect}
-              className="w-full max-w-[90%] rounded-2xl border-2 border-[#00FFB2] p-3 bg-[#1f0238] shadow-[0_0_15px_#00FFB2] flex items-center justify-center gap-2 flex-wrap cursor-pointer active:scale-95 transition-transform duration-100 animate-pulse-zoom"
+              className="w-full max-w-[90%] rounded-2xl border-2 border-[#00FFB2] p-4 bg-[#1f0238] shadow-[0_0_15px_#00FFB2] flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform duration-100"
             >
               <img
                 src="/assets/Gifticonfreebet.png"
@@ -47,6 +48,7 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
           </div>
         </div>
 
+        {/* Progress Bar */}
         <div className="relative w-full max-w-[90%] mt-10">
           <div className="bg-[#3c1a57] rounded-full h-6 flex items-center px-1 relative z-10">
             {[...Array(5)].map((_, i) => (
@@ -58,6 +60,7 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
               ></div>
             ))}
           </div>
+
           <div className="absolute bottom-[-12px] left-0 w-full h-4 flex justify-between z-20 px-1">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="w-[20%] flex justify-center">
@@ -67,6 +70,7 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
           </div>
         </div>
 
+        {/* Free Bet Information */}
         <div className="w-full max-w-[90%] flex justify-between -mt-2 text-xs text-white font-lato z-30 relative">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex flex-col items-center leading-tight text-center w-[20%]">
@@ -82,12 +86,13 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
             label="Collect"
             type="button"
             handleButtonClick={() => {
-              playCollectSound(); // 👈 joue le son
-              onCollect();        // 👈 continue l’action
+              playCollectSound(); // 👈 plays sound
+              onCollect();        // 👈 continue the action
             }}
           />
         </div>
 
+        {/* Instructions */}
         <p className="font-bold text-white text-lg underline font-designer uppercase text-center mt-10 mb-6">
           How can I access my freebets?
         </p>
