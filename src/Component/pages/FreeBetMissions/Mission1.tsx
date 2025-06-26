@@ -1,43 +1,105 @@
-import React from "react";
+/* src/Component/pages/FreeBetMissions/Mission1.tsx */
+
+import { useEffect, useState } from "react";
 import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
-import Mission1AfterDeposit from "./Mission1AfterDeposit";
+import Mission1AfterDeposit  from "./Mission1AfterDeposit";
+import { io, Socket }        from "socket.io-client";
 
 interface Mission1Props {
   onBack: () => void;
   onCollect: () => void;
-  hasDeposited?: boolean;
+  hasDeposited: boolean | undefined;   // undefined = inconnu
   depositAmount?: number;
 }
 
 const Mission1: React.FC<Mission1Props> = ({
   onBack,
   onCollect,
-  hasDeposited = false,  // Default to false if undefined
-  depositAmount = 0,     // Default to 0 if undefined
+  hasDeposited: initDep,
+  depositAmount: initAmt,
 }) => {
-  const handleCollect = () => {
-    if (depositAmount > 0) {
-      onCollect(); // Trigger the collect function passed from parent
-    } else {
-      console.error("❌ Deposit amount is not available or invalid");
-    }
-  };
+  /* -------- état -------- */
+  const [hasDeposited,  setDep]   = useState<boolean | undefined>(initDep);
+  const [depositAmount, setAmt]   = useState<number | null>(initAmt ?? null);
+  const [loading,       setLoad]  = useState(initDep === undefined);
 
-  return (
-    <div className="relative min-h-screen bg-gradient-to-b from-[#160028] via-[#1c0934] to-[#2b1048] pb-28 overflow-hidden">
-      {/* Conditional rendering based on deposit status */}
-      {hasDeposited ? (
-        // Mission 1 After Deposit
-        <Mission1AfterDeposit
-          onBack={onBack}
-          onCollect={handleCollect}
-          depositAmount={depositAmount} // Ensure depositAmount is passed
-        />
-      ) : (
-        // Mission 1 Before Deposit
-        <Mission1BeforeDeposit onBack={onBack} />
-      )}
-    </div>
+  /* -------- effet -------- */
+  useEffect(() => {
+    const tg   = window.Telegram?.WebApp;
+    const init = tg?.initData;
+    const uid  = (tg?.initDataUnsafe as any)?.user?.id as number | undefined;
+
+    /* socket déclaré ici pour être visible dans le cleanup */
+    let socket: Socket | null = null;
+
+    /* si infos manquantes, on stoppe tout */
+    if (!init || !uid) {
+      setLoad(false);
+      return () => {};                 // cleanup “vide”
+    }
+
+    /* ---- vérifie dépôt ---- */
+    const checkDeposit = async () => {
+      try {
+        const r = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/user/deposit-status`,
+          { headers: { Authorization: `tma ${init}` } },
+        );
+        if (!r.ok) return false;
+        const j = await r.json();
+        if (j.hasDeposited && typeof j.depositAmount === "number") {
+          setDep(true);
+          setAmt(j.depositAmount);
+        } else {
+          setDep(false);
+        }
+        setLoad(false);
+        return true;
+      } catch {
+        setLoad(false);
+        return false;
+      }
+    };
+
+    /* appel initial uniquement si parent ne l’a pas encore */
+    if (initDep === undefined) void checkDeposit();
+    else setLoad(false);
+
+    /* ---- WebSocket “first-deposit” ---- */
+    socket = io(import.meta.env.VITE_BACKEND_URL, {
+      query: { telegramId: String(uid) },
+      transports: ["websocket"],
+    });
+
+    socket.on("first-deposit", (p: { amount: number }) => {
+      setDep(true);
+      setAmt(p.amount);
+      setLoad(false);
+    });
+
+    /* ---- cleanup ---- */
+    return () => {
+      if (socket) socket.disconnect();
+    };
+  }, [initDep]);
+
+  /* -------- rendu -------- */
+  if (loading) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center bg-[#160028]/90 z-50">
+        <p className="text-white animate-pulse">Loading…</p>
+      </div>
+    );
+  }
+
+  return hasDeposited && depositAmount !== null ? (
+    <Mission1AfterDeposit
+      onBack={onBack}
+      onCollect={onCollect}
+      depositAmount={depositAmount}
+    />
+  ) : (
+    <Mission1BeforeDeposit onBack={onBack} />
   );
 };
 
