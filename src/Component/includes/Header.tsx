@@ -73,7 +73,7 @@ const Header: React.FC<HeaderProps> = ({ pageHeading, refreshTrigger }) => {
     if (!newMuted) playMenuSound();
   };
 
-  // Fonction pour récupérer le wallet
+  // Fonction pour récupérer le wallet directement depuis l'API
   const fetchWallet = async () => {
     try {
       if (!user?.id) return;
@@ -81,23 +81,13 @@ const Header: React.FC<HeaderProps> = ({ pageHeading, refreshTrigger }) => {
       const initData = window.Telegram?.WebApp?.initData;
       if (!initData) return;
 
-      // Vérification de localStorage avant d'envoyer une requête
-      const storedWallet = localStorage.getItem("wallet");
-      if (storedWallet) {
-        setWallet(JSON.parse(storedWallet));
-        return;  // Si les données sont dans le localStorage, on s'arrête là
-      }
-
-      // Si les données ne sont pas dans localStorage, on les récupère depuis l'API
       const res = await axios.get("https://corgi-in-space-backend-production.up.railway.app/api/wallet/me", {
         headers: {
           Authorization: `tma ${initData}`,
         },
       });
 
-      const fetchedWallet = res.data.wallet;
-      setWallet(fetchedWallet);
-      localStorage.setItem("wallet", JSON.stringify(fetchedWallet));  // Sauvegarde les données dans localStorage
+      setWallet(res.data.wallet);
     } catch (error) {
       console.error("❌ Erreur lors de la récupération du wallet :", error);
     }
