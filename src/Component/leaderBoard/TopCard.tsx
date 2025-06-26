@@ -1,3 +1,8 @@
+/* ===========================================================================
+   src/Component/leaderBoard/TopCard.tsx
+   Version finale — contraste podium, spacing cohérent, flèche bleue ready
+   ========================================================================== */
+
 import React from "react";
 import { motion } from "framer-motion";
 import { CurrencyLeaderBoardIcon } from "../../assets/iconset";
@@ -9,7 +14,7 @@ export interface CardData {
   title: string;
   amount: number;
   isCurrentUser?: boolean;
-  isLast?: boolean; // optional, but kept for other separators
+  isLast?: boolean;          // facultatif mais conservé si tu veux d'autres séparateurs
 }
 
 /* --------------------------- HELPERS ----------------------------- */
@@ -37,8 +42,8 @@ const PodiumCard: React.FC<CardData> = ({
   amount,
   isCurrentUser,
 }) => {
-  const [from, to] = podiumPalette[rank - 1];
-  const size = rank === 1 ? "h-20 w-20" : "h-16 w-16";
+  const [from, to]  = podiumPalette[rank - 1];
+  const size        = rank === 1 ? "h-20 w-20" : "h-16 w-16";
 
   return (
     <motion.li
@@ -48,7 +53,7 @@ const PodiumCard: React.FC<CardData> = ({
       style={{ background: `linear-gradient(135deg,${from} 0%,${to} 100%)` }}
     >
       {/* Rank */}
-      <h3 className="font-designer text-3xl text-white drop-shadow-md">
+      <h3 className="font-designer text-3xl text-white drop-shadow">
         {rank}
         <span className="text-xl">{suffix(rank)}</span>
       </h3>
@@ -56,7 +61,7 @@ const PodiumCard: React.FC<CardData> = ({
       {/* Avatar */}
       <img
         src={profilePic}
-        alt={`${title}'s avatar`}
+        alt={`${title} avatar`}
         className={`${size} rounded-full ring-2 ring-white/70 object-cover`}
         loading="lazy"
       />
@@ -92,7 +97,7 @@ const RowCard: React.FC<CardData> = ({
 }) => (
   <motion.div
     layout
-    whileHover={{ scale: 1.02 }}
+    whileHover={{ scale: 1.015 }}
     className="relative flex items-center gap-4 rounded-xl bg-white/5/30 px-4 py-3 backdrop-blur-md"
   >
     {/* highlight */}
@@ -110,7 +115,7 @@ const RowCard: React.FC<CardData> = ({
     {/* avatar */}
     <img
       src={profilePic}
-      alt={`${title}'s avatar`}
+      alt={`${title} avatar`}
       className="h-10 w-10 rounded-full ring-1 ring-white/40 object-cover"
       loading="lazy"
     />
