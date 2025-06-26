@@ -1,7 +1,3 @@
-/* --------------------------------------------------------------------------
-   src/Component/leaderBoard/InnerTab.tsx
-   -------------------------------------------------------------------------- */
-
 import { useMemo, useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpCircle } from "lucide-react";
@@ -17,6 +13,7 @@ import { useAuthStore } from "../../store/authStore";
 export interface InnerTabProps {
   period: "all time" | "daily" | "weekly" | "monthly";
 }
+
 export interface Player {
   rank: number;
   username: string;
@@ -43,12 +40,11 @@ const InnerTab: React.FC<InnerTabProps> = ({ period }) => {
   const currentUsername = useAuthStore((s) => s.username);
 
   /* ---------- appel API ---------- */
-  const apiPeriod =
-    period === "all time" ? "all" : period; // mapping correct
+  const apiPeriod = period === "all time" ? "all" : period; // mapping correct
   const { data, error, isLoading } = useSWR<Player[]>(
     `${API_BASE}/api/leaderboard?period=${apiPeriod}&limit=100`,
     fetcher,
-    { refreshInterval: 15000 },
+    { refreshInterval: 15000 }
   );
 
   const players = Array.isArray(data) ? data : [];
@@ -63,28 +59,30 @@ const InnerTab: React.FC<InnerTabProps> = ({ period }) => {
   const anchor = useRef<HTMLDivElement>(null);
   const sentinel = useRef<HTMLDivElement>(null);
   const [showUp, setShowUp] = useState(false);
+
   useEffect(() => {
     const io = new IntersectionObserver(
       ([e]) => setShowUp(!e.isIntersecting),
-      { threshold: 0.25 },
+      { threshold: 0.25 }
     );
     sentinel.current && io.observe(sentinel.current);
     return () => io.disconnect();
   }, []);
+  
   const scrollToTop = () => anchor.current?.scrollIntoView({ behavior: "smooth" });
 
   /* ---------- états réseau ---------- */
-  if (isLoading) return <p className="text-center py-10">Loading…</p>;
-  if (error)     return <p className="text-center text-red-400 py-10">Erreur leaderboard</p>;
+  if (isLoading) return <p className="text-center py-10 text-white">Chargement en cours…</p>;
+  if (error) return <p className="text-center text-red-400 py-10">Erreur de chargement du leaderboard</p>;
 
   /* ---------- UI ---------- */
   return (
-    <section className="relative flex w-full flex-col gap-6">
+    <section className="relative flex w-full flex-col gap-6 p-4">
       <div ref={anchor} />
 
       {/* ------------------ PODIUM ------------------ */}
       <motion.ol
-        className="mx-auto grid w-full max-w-[350px] grid-cols-3 items-end gap-2"
+        className="mx-auto grid w-full grid-cols-1 md:grid-cols-3 items-end gap-4 md:max-w-[500px]"
       >
         {podium.map(
           (u) =>
@@ -127,7 +125,7 @@ const InnerTab: React.FC<InnerTabProps> = ({ period }) => {
             transition={{ duration: 0.22 }}
             onClick={scrollToTop}
             aria-label="Scroll to top"
-            className="fixed bottom-[122px] right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-[#00e1ff]/90 backdrop-blur shadow-xl active:scale-95"
+            className="fixed bottom-[122px] right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-[#00e1ff]/90 backdrop-blur shadow-xl active:scale-95 hover:bg-[#00b1cc]"
           >
             <ArrowUpCircle className="h-6 w-6 text-black/90" />
           </motion.button>
@@ -136,8 +134,9 @@ const InnerTab: React.FC<InnerTabProps> = ({ period }) => {
 
       <div className="h-[170px]" />
 
-      <p className="pointer-events-none absolute bottom-[150px] left-1/2 -translate-x-1/2 text-[11px] font-medium tracking-wide text-white/60">
-        {period} leaderboard
+      {/* Footer Text */}
+      <p className="pointer-events-none absolute bottom-[150px] left-1/2 -translate-x-1/2 text-[12px] font-medium tracking-wide text-white/60">
+        Leaderboard pour la période : {period}
       </p>
     </section>
   );

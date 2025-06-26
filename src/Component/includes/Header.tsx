@@ -14,8 +14,7 @@ import {
 } from "../../assets/iconset";
 import ImgWithFallback from "../common/ImageWithFallback";
 import useTelegramSafeSound from "../../hooks/useTelegramSafeSound";
-import NotificationModal from "../modals/NotificationModal"; // adapte le chemin si besoin
-
+import NotificationModal from "../modals/NotificationModal";
 
 interface HeaderProps {
   pageHeading: React.ReactNode | string;
@@ -35,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({ pageHeading, refreshTrigger }) => {
   const { user } = useUser();
   const playMenuSound: () => void = useTelegramSafeSound("/assets/sounds/22TOPMENUbuttons.mp3");
   const playSound = () => {
-    playMenuSound(); // les sons d'interface ne sont PAS affectés par le mute musique
+    playMenuSound(); // Les sons d'interface ne sont PAS affectés par le mute musique
   };
 
   const balanceToggle = () => {
@@ -45,29 +44,27 @@ const Header: React.FC<HeaderProps> = ({ pageHeading, refreshTrigger }) => {
 
   const handleRedirectToProfile = () => {
     playSound();
-     setIsBalanceDrop(false);
+    setIsBalanceDrop(false);
     setIsProfileShow(!isProfileShow);
   };
 
   const handleNotificationClick = async () => {
-  playSound();
-  setIsNotificationOpen(true); // ✅ Montre tout de suite le modal
+    playSound();
+    setIsNotificationOpen(true); // ✅ Montre tout de suite le modal
 
-  const initData = window.Telegram?.WebApp?.initData;
-  if (!initData) return;
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData) return;
 
-  try {
-    await axios.get("https://corgi-in-space-backend-production.up.railway.app/api/notifications/all", {
-      headers: { Authorization: `tma ${initData}` },
-    });
+    try {
+      await axios.get("https://corgi-in-space-backend-production.up.railway.app/api/notifications/all", {
+        headers: { Authorization: `tma ${initData}` },
+      });
 
-    setUnreadCount(0); // ✅ Remet le compteur à zéro
-  } catch (err) {
-    console.error("❌ Erreur lors du fetch des notifications :", err);
-  }
-};
-
-
+      setUnreadCount(0); // ✅ Remet le compteur à zéro
+    } catch (err) {
+      console.error("❌ Erreur lors du fetch des notifications :", err);
+    }
+  };
 
   const toggleMusicMute = () => {
     const newMuted = !isMusicMuted;
@@ -76,6 +73,7 @@ const Header: React.FC<HeaderProps> = ({ pageHeading, refreshTrigger }) => {
     if (!newMuted) playMenuSound();
   };
 
+  // Fonction pour récupérer le wallet
   const fetchWallet = async () => {
     try {
       if (!user?.id) return;
@@ -83,84 +81,94 @@ const Header: React.FC<HeaderProps> = ({ pageHeading, refreshTrigger }) => {
       const initData = window.Telegram?.WebApp?.initData;
       if (!initData) return;
 
+      // Vérification de localStorage avant d'envoyer une requête
+      const storedWallet = localStorage.getItem("wallet");
+      if (storedWallet) {
+        setWallet(JSON.parse(storedWallet));
+        return;  // Si les données sont dans le localStorage, on s'arrête là
+      }
+
+      // Si les données ne sont pas dans localStorage, on les récupère depuis l'API
       const res = await axios.get("https://corgi-in-space-backend-production.up.railway.app/api/wallet/me", {
         headers: {
           Authorization: `tma ${initData}`,
         },
       });
 
-      setWallet(res.data.wallet);
+      const fetchedWallet = res.data.wallet;
+      setWallet(fetchedWallet);
+      localStorage.setItem("wallet", JSON.stringify(fetchedWallet));  // Sauvegarde les données dans localStorage
     } catch (error) {
       console.error("❌ Erreur lors de la récupération du wallet :", error);
     }
   };
 
   useEffect(() => {
-    fetchWallet(); // au premier chargement
-    const interval = setInterval(fetchWallet, 10000); // toutes les 10 secondes
+    fetchWallet(); // Appel initial lors du premier chargement
+    const interval = setInterval(fetchWallet, 10000); // Requête toutes les 10 secondes pour la mise à jour
     return () => clearInterval(interval);
   }, [user]);
 
+  // Mise à jour du wallet en fonction du refreshTrigger
   useEffect(() => {
     if (refreshTrigger !== undefined) {
-      fetchWallet(); // 🔄 forçage manuel depuis Deposit/Withdraw
+      fetchWallet(); // Forcer la mise à jour du wallet depuis Deposit/Withdraw
     }
   }, [refreshTrigger]);
 
+  // Récupération du nombre de notifications non lues
   useEffect(() => {
-  const fetchUnreadCount = async () => {
-    try {
-      if (!user?.id) return;
-      const initData = window.Telegram?.WebApp?.initData;
-      if (!initData) return;
+    const fetchUnreadCount = async () => {
+      try {
+        if (!user?.id) return;
+        const initData = window.Telegram?.WebApp?.initData;
+        if (!initData) return;
 
-      const res = await axios.get("https://corgi-in-space-backend-production.up.railway.app/api/notifications/unread-count", {
-        headers: {
-          Authorization: `tma ${initData}`,
-        },
-      });
+        const res = await axios.get("https://corgi-in-space-backend-production.up.railway.app/api/notifications/unread-count", {
+          headers: {
+            Authorization: `tma ${initData}`,
+          },
+        });
 
-      setUnreadCount(res.data.count || 0);
-    } catch (err) {
-      console.error("❌ Erreur fetchUnreadCount:", err);
-    }
-  };
+        setUnreadCount(res.data.count || 0);
+      } catch (err) {
+        console.error("❌ Erreur fetchUnreadCount:", err);
+      }
+    };
 
-  fetchUnreadCount();
-  const interval = setInterval(fetchUnreadCount, 10000); // rafraîchir toutes les 10s
-  return () => clearInterval(interval);
-}, [user]);
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 10000); // Rafraîchissement toutes les 10s
+    return () => clearInterval(interval);
+  }, [user]);
 
+  // Mise en place de la gestion des notifications en temps réel via EventSource
+  useEffect(() => {
+    if (!user?.id) return;
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData) return;
 
+    const source = new EventSource(
+      `https://corgi-in-space-backend-production.up.railway.app/api/notifications/stream?initData=${encodeURIComponent(initData)}`
+    );
 
-useEffect(() => {
-  if (!user?.id) return;
-  const initData = window.Telegram?.WebApp?.initData;
-  if (!initData) return;
+    source.onmessage = (event) => {
+      console.log("📨 Nouvelle notification SSE :", event.data);
+      setUnreadCount((prev) => prev + 1);
+    };
 
-  const source = new EventSource(
-  `https://corgi-in-space-backend-production.up.railway.app/api/notifications/stream?initData=${encodeURIComponent(initData)}`
-);
+    source.addEventListener("connected", () => {
+      console.log("✅ Connecté au flux SSE.");
+    });
 
+    source.onerror = (err) => {
+      console.error("❌ Erreur SSE :", err);
+      source.close();
+    };
 
-  source.onmessage = (event) => {
-    console.log("📨 Nouvelle notification SSE :", event.data);
-    setUnreadCount((prev) => prev + 1);
-  };
-
-  source.addEventListener("connected", () => {
-    console.log("✅ Connecté au flux SSE.");
-  });
-
-  source.onerror = (err) => {
-    console.error("❌ Erreur SSE :", err);
-    source.close();
-  };
-
-  return () => {
-    source.close();
-  };
-}, [user]);
+    return () => {
+      source.close();
+    };
+  }, [user]);
 
   return (
     <>
@@ -225,11 +233,10 @@ useEffect(() => {
               onClick={handleNotificationClick}
             >
               {unreadCount > 0 && (
-  <span className="bg-primary w-3 h-3 rounded-full absolute -top-[.0625rem] right-[.25rem] tableFont leading-[.6875rem] text-black text-[10px] flex items-center justify-center">
-    {unreadCount > 9 ? "9+" : unreadCount}
-  </span>
-)}
-
+                <span className="bg-primary w-3 h-3 rounded-full absolute -top-[.0625rem] right-[.25rem] tableFont leading-[.6875rem] text-black text-[10px] flex items-center justify-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
               <BellIcon />
             </button>
 
@@ -271,12 +278,11 @@ useEffect(() => {
         <Profile setIsProfileShow={setIsProfileShow} />
       )}
       {isNotificationOpen && (
-  <NotificationModal
-    isOpen={isNotificationOpen}
-    setIsOpen={setIsNotificationOpen}
-  />
-)}
-
+        <NotificationModal
+          isOpen={isNotificationOpen}
+          setIsOpen={setIsNotificationOpen}
+        />
+      )}
     </>
   );
 };

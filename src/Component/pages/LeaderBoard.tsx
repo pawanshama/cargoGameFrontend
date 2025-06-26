@@ -1,15 +1,10 @@
-/* ---------------------------------------------------------------------------
-   src/Component/pages/LeaderBoard.tsx
-   Definitive “pro” version – fully aligned with InnerTab & TopCard
-   --------------------------------------------------------------------------- */
-
 import { useState, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy } from "lucide-react";
 
 import HorizontalTabs from "../common/Tabs";
-import Header  from "../includes/Header";
-import Footer  from "../includes/Footer";
+import Header from "../includes/Header";
+import Footer from "../includes/Footer";
 import InnerTab, { InnerTabProps } from "../leaderBoard/InnerTab";
 
 /* ------------------------------------------------------------------ */
@@ -21,9 +16,9 @@ interface Tab { label: string; index: number; period: Period }
 
 const tabs: Tab[] = [
   { label: "All Time", index: 0, period: "all time" },
-  { label: "Daily",    index: 1, period: "daily"    },
-  { label: "Weekly",   index: 2, period: "weekly"   },
-  { label: "Monthly",  index: 3, period: "monthly"  },
+  { label: "Daily", index: 1, period: "daily" },
+  { label: "Weekly", index: 2, period: "weekly" },
+  { label: "Monthly", index: 3, period: "monthly" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -43,7 +38,7 @@ const LeaderBoard: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <div className="relative flex h-[100dvh] flex-col font-lato text-white bg-gradient-to-b from-[#160028] via-[#1d0934] to-[#2b1048]">
+    <div className="relative flex flex-col h-full min-h-screen bg-gradient-to-b from-[#160028] via-[#1d0934] to-[#2b1048] font-lato text-white">
       {/* background blobs */}
       <DecorativeBlobs />
 
@@ -51,7 +46,7 @@ const LeaderBoard: React.FC = () => {
       <Header
         pageHeading={
           <div className="flex items-center gap-2">
-            <Trophy className="h-6 w-6 text-[#00e1ff] drop-shadow-[0_0_6px_rgba(0,225,255,0.9)]" />
+            <Trophy className="h-6 w-6 text-[#00e1ff] drop-shadow-md" />
             <span className="text-lg font-bold tracking-wider">Leaderboard</span>
           </div>
         }
@@ -72,20 +67,19 @@ const LeaderBoard: React.FC = () => {
         {/* animated panels */}
         <div className="h-full overflow-y-auto px-4 pb-28 pt-4 snap-y snap-mandatory">
           <AnimatePresence mode="wait" initial={false}>
-            {tabs.map(
-              ({ index, period }) =>
-                activeTab === index && (
-                  <motion.section
-                    key={period}
-                    initial={{ opacity: 0, y: 28 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -28 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="snap-start"
-                  >
-                    <InnerTab period={period} />
-                  </motion.section>
-                ),
+            {tabs.map(({ index, period }) =>
+              activeTab === index && (
+                <motion.section
+                  key={period}
+                  initial={{ opacity: 0, y: 28 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -28 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="snap-start"
+                >
+                  <InnerTab period={period} />
+                </motion.section>
+              ),
             )}
           </AnimatePresence>
         </div>

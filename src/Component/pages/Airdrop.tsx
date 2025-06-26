@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Footer from "../includes/Footer";
 import Header from "../includes/Header";
+import { motion } from "framer-motion"; // Pour les animations
 
 const AirdropPage = () => {
   const [timeLeft, setTimeLeft] = useState("");
@@ -8,63 +9,55 @@ const AirdropPage = () => {
   const [coinsEarned, setCoinsEarned] = useState<number>(0);
   const [isFarming, setIsFarming] = useState<boolean | null>(null);
 
-
-
   const initData = window.Telegram?.WebApp?.initData || "";
 
-
-
-const fetchUserAircoinMetadata = async () => {
-  try {
-    const res = await fetch("/api/aircoins/me", {
-      headers: {
-        Authorization: `tma ${initData}`,
-      },
-    });
-    const data = await res.json();
-    setCoinsEarned(data.aircoinsTotal || 0);
-    setIsFarming(data.isFarming);
-
-  } catch (err) {
-    console.error("Erreur /aircoins/me :", err);
-  }
-};
-
-
-useEffect(() => {
-  fetchUserAircoinMetadata();
-}, []);
-
-useEffect(() => {
-  if (!isFarming || !initData) return;
-
-  let counter = 0;
-
-  const interval = setInterval(async () => {
+  const fetchUserAircoinMetadata = async () => {
     try {
-      await fetch("/api/aircoins/increment", {
-        method: "POST",
+      const res = await fetch("/api/aircoins/me", {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `tma ${initData}`,
         },
       });
-
-      setCoinsEarned(prev => {
-        counter += 1;
-        if (counter % 10 === 0) {
-          fetchUserAircoinMetadata(); // Sync toutes les 10s
-        }
-        return prev + 1;
-      });
+      const data = await res.json();
+      setCoinsEarned(data.aircoinsTotal || 0);
+      setIsFarming(data.isFarming);
     } catch (err) {
-      console.error("❌ Erreur update farming:", err);
+      console.error("Erreur /aircoins/me :", err);
     }
-  }, 1000);
+  };
 
-  return () => clearInterval(interval);
-}, [isFarming, initData]);
+  useEffect(() => {
+    fetchUserAircoinMetadata();
+  }, []);
 
+  useEffect(() => {
+    if (!isFarming || !initData) return;
+
+    let counter = 0;
+    const interval = setInterval(async () => {
+      try {
+        await fetch("/api/aircoins/increment", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `tma ${initData}`,
+          },
+        });
+
+        setCoinsEarned(prev => {
+          counter += 1;
+          if (counter % 10 === 0) {
+            fetchUserAircoinMetadata(); // Sync toutes les 10s
+          }
+          return prev + 1;
+        });
+      } catch (err) {
+        console.error("❌ Erreur update farming:", err);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isFarming, initData]);
 
   const maxLevel = 9;
   const levels = [
@@ -174,47 +167,39 @@ useEffect(() => {
           )}
         </div>
 
+        {/* Start Farming Button */}
+        <div className="w-full text-center">
+          {isFarming === null ? null : !isFarming ? (
+            <motion.button
+              onClick={async () => {
+                const telegramId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id;
 
-<div className="w-full text-center">
-  {isFarming === null ? null : !isFarming ? (
-    <button
-      onClick={async () => {
-        const telegramId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id;
+                if (!telegramId) {
+                  console.error("❌ Impossible de récupérer telegram_id");
+                  return;
+                }
 
-        if (!telegramId) {
-          console.error("❌ Impossible de récupérer telegram_id");
-          return;
-        }
+                await fetch("/api/startfarming", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `tma ${initData}`,
+                  },
+                  body: JSON.stringify({ telegram_id: telegramId }),
+                });
 
-        await fetch("/api/startfarming", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `tma ${initData}`,
-          },
-          body: JSON.stringify({ telegram_id: telegramId }),
-        });
-
-        setIsFarming(true);
-      }}
-      className="px-6 py-3 mt-4 rounded-full bg-gradient-to-br from-green-400 to-teal-500 text-white font-bold shadow-lg hover:scale-105 transition-transform"
-    >
-      🚀 Start Farming Coins
-    </button>
-  ) : (
-    <div className="text-green-400 font-bold mt-4 animate-pulse">
-      ⛏️ Farming started! 1 coin/sec
-    </div>
-  )}
-</div>
-
-
-
-
-
-
-
-
+                setIsFarming(true);
+              }}
+              className="px-6 py-3 mt-4 rounded-full bg-gradient-to-br from-green-400 to-teal-500 text-white font-bold shadow-lg hover:scale-105 transition-transform"
+            >
+              🚀 Start Farming Coins
+            </motion.button>
+          ) : (
+            <div className="text-green-400 font-bold mt-4 animate-pulse">
+              ⛏️ Farming started! 1 coin/sec
+            </div>
+          )}
+        </div>
 
         {/* HOW TO EARN COINS */}
         <div className="mt-6">
