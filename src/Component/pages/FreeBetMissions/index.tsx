@@ -103,36 +103,47 @@ const FreeBetMissions: React.FC = () => {
       </p>
 
       {/* ------------------------- mission cards -------------------------- */}
-      <div className="mx-auto mt-8 flex w-full max-w-lg flex-col gap-6 px-4">
-        {missions.map(({ id, title }) => (
-          <motion.button
-            key={id}
-            type="button"
-            onClick={() => setActiveMission(id)}
-            whileHover={{ y: -4, scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            className="group relative overflow-hidden rounded-2xl p-[1px] shadow-lg shadow-[#000]/40 backdrop-blur-md transition-transform"
-          >
-            {/* gradient border */}
-            <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#5b2bff] via-[#7e3cff] to-[#00e1ff] opacity-70 group-hover:opacity-100" />
-            {/* inner content */}
-            <div className="flex items-center justify-between rounded-2xl bg-[#1d1233]/90 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <Rocket className="h-9 w-9 text-[#00e1ff] drop-shadow-[0_0_6px_rgba(0,225,255,0.6)]" />
-                <div className="text-left leading-snug">
-                  <p className="font-designer text-sm font-bold uppercase tracking-wide opacity-90">
-                    Mission {id}
-                  </p>
-                  <p className="font-lato text-base font-semibold text-[#00FFB2]">
-                    {title}
-                  </p>
+      {hasDeposited ? (
+        // Si le dépôt est effectué, on affiche directement la mission après dépôt (Mission1AfterDeposit)
+        <Mission1
+          onBack={() => setActiveMission(null)}
+          onCollect={() => setActivePopup(1)}
+          hasDeposited={hasDeposited}
+          depositAmount={depositAmount}
+        />
+      ) : (
+        // Sinon, on affiche les cartes de mission pour permettre à l'utilisateur de commencer
+        <div className="mx-auto mt-8 flex w-full max-w-lg flex-col gap-6 px-4">
+          {missions.map(({ id, title }) => (
+            <motion.button
+              key={id}
+              type="button"
+              onClick={() => setActiveMission(id)}
+              whileHover={{ y: -4, scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              className="group relative overflow-hidden rounded-2xl p-[1px] shadow-lg shadow-[#000]/40 backdrop-blur-md transition-transform"
+            >
+              {/* gradient border */}
+              <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#5b2bff] via-[#7e3cff] to-[#00e1ff] opacity-70 group-hover:opacity-100" />
+              {/* inner content */}
+              <div className="flex items-center justify-between rounded-2xl bg-[#1d1233]/90 px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <Rocket className="h-9 w-9 text-[#00e1ff] drop-shadow-[0_0_6px_rgba(0,225,255,0.6)]" />
+                  <div className="text-left leading-snug">
+                    <p className="font-designer text-sm font-bold uppercase tracking-wide opacity-90">
+                      Mission {id}
+                    </p>
+                    <p className="font-lato text-base font-semibold text-[#00FFB2]">
+                      {title}
+                    </p>
+                  </div>
                 </div>
+                <ChevronRight className="h-7 w-7 text-white/70 transition-transform group-hover:translate-x-1" />
               </div>
-              <ChevronRight className="h-7 w-7 text-white/70 transition-transform group-hover:translate-x-1" />
-            </div>
-          </motion.button>
-        ))}
-      </div>
+            </motion.button>
+          ))}
+        </div>
+      )}
 
       {/* ---------------------------- overlays ---------------------------- */}
       <AnimatePresence>

@@ -19,8 +19,8 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
   depositAmount,
 }) => {
   return (
-    <div className="relative z-50 bg-[#160028] bg-opacity-95 overflow-y-auto min-h-screen">
-      <div className="px-4 pt-10 pb-8 h-auto text-center">
+    <div className="relative z-50 bg-[#160028] bg-opacity-95 overflow-y-auto min-h-screen flex flex-col items-center">
+      <div className="px-4 pt-10 pb-8 w-full max-w-[90%] text-center">
         {/* Mission Title */}
         <p className="text-[28px] font-bold font-designer text-white uppercase mb-2">
           MISSION 1: DOUBLE YOUR FIRST DEPOSIT!
@@ -31,10 +31,10 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
         </p>
 
         {/* Collect Free Bets Section */}
-        <div className="flex justify-center mt-10">
+        <div className="mt-10 w-full max-w-[80%] lg:max-w-[60%] mx-auto flex justify-center">
           <div
             onClick={onCollect}
-            className="w-full max-w-[80%] lg:max-w-[60%] rounded-2xl border-2 border-[#00FFB2] p-4 bg-[#1f0238] shadow-[0_0_15px_#00FFB2] flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform duration-100"
+            className="w-full rounded-2xl border-2 border-[#00FFB2] p-4 bg-[#1f0238] shadow-[0_0_15px_#00FFB2] flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform duration-100"
           >
             <img
               src="/assets/Gifticonfreebet.png"
