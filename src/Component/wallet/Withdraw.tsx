@@ -49,7 +49,7 @@ const Withdraw: React.FC<WithdrawProps> = ({
       const { data, wallet } = await res.json();
       const paidRaw =
         (data?.wallet?.paidcoins ?? wallet?.paidcoins ?? 0) as number; // nanoTON
-      setBalance((paidRaw / 1e9).toFixed(3)); // ➜ TON
+      setBalance((paidRaw).toFixed(3)); // ➜ TON
     } catch (e) {
       console.error("❌ fetchGameBalance:", e);
       setBalance("N/A");
