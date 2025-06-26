@@ -93,12 +93,27 @@ if (tg) {
 
   /* 2. iFrame → retour au lobby */
   useEffect(() => {
-    const handler = (e: MessageEvent) => {
-      if (e.data?.action === "goToMainScreen") {
-        setShowGame(false);
-        setGameUrl(null);
-        setMatchResult(null);
-        setIsLoading(false);
+  const handler = (e: MessageEvent) => {
+      // Vérifie l’origine (remplace par le domaine réel du jeu)
+      if (e.origin !== "https://corgi-game-dist.vercel.app") return;
+
+      switch (e.data?.action) {
+        case "goToMainScreen":
+          setShowGame(false);
+          setGameUrl(null);
+          setMatchResult(null);
+          setIsLoading(false);
+          break;
+
+        case "PERFECT_HIT":
+          // HAPTIC : top-frame déclenche la vibration pour le mobile
+          try {
+            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("medium");
+            navigator.vibrate?.(35);
+          } catch (_) {/* silence */}
+          break;
+        default:
+          break; 
       }
     };
     window.addEventListener("message", handler);
@@ -163,19 +178,20 @@ if (tg) {
       />
     );
 
-  /* 6. In-game iframe */
-  if (showGame && gameUrl) {
-    return (
-      <div className="w-full h-[100dvh] overflow-hidden">
-        <iframe
-          src={gameUrl}
-          title="Corgi Game"
-          className="w-full h-full border-none"
-          allow="autoplay; fullscreen"
-        />
-      </div>
-    );
-  }
+/* 6. In-game iframe */
+if (showGame && gameUrl) {
+  return (
+    <div className="w-full h-[100dvh] overflow-hidden">
+      <iframe
+        src={gameUrl}
+        title="Corgi Game"
+        className="w-full h-full border-none"
+        allow="autoplay; fullscreen; vibrate"
+      /> {/* autorise navigator.vibrate */}
+    </div>
+  );
+}
+
 
   /* 7. — LOBBY — */
   if (!pageReady) return null; // évite flash

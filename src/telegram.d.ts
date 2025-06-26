@@ -31,6 +31,9 @@ export interface TelegramInitDataUnsafe {
   [key: string]: unknown;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Interface principale étendue                                      */
+/* ------------------------------------------------------------------ */
 export interface TelegramWebApp {
   /* --- propriétés core --- */
   initData: string;
@@ -47,6 +50,18 @@ export interface TelegramWebApp {
   onEvent(type: TwaEvent, cb: (...args: any[]) => void): void;
   offEvent(type: TwaEvent, cb: (...args: any[]) => void): void;
   sendEvent?(type: TwaEvent, data?: unknown): void;
+
+  /* --- Haptique (ajout) --- */
+  HapticFeedback?: {
+    /** Vibration courte : “light”, “medium”, “heavy”, “rigid” ou “soft” */
+    impactOccurred(style?: "light" | "medium" | "heavy" | "rigid" | "soft"): void;
+
+    /** Vibration de notification : “error”, “success” ou “warning” */
+    notificationOccurred(type: "error" | "success" | "warning"): void;
+
+    /** Petit “tick” pour changement de sélection */
+    selectionChanged(): void;
+  };
 }
 
 export interface TelegramGlobal {

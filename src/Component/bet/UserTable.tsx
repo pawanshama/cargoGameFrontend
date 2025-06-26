@@ -82,7 +82,7 @@ const UserTable = () => {
       <div className="grid grid-cols-[2fr_1fr_1fr] items-center px-3 py-[.375rem] bg-transparent text-white text-xs font-semibold">
         <span className="text-left">User</span>
         <span className="text-center">Time</span>
-        <span className="text-right">Gain</span>
+        <span className="text-right">Profit</span>
       </div>
 
       <div className="w-full stroke h-[.0625rem] bg-white/20"></div>
