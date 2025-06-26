@@ -95,7 +95,8 @@ if (tg) {
   useEffect(() => {
   const handler = (e: MessageEvent) => {
       // Vérifie l’origine (remplace par le domaine réel du jeu)
-      if (e.origin !== "https://corgi-game-dist.vercel.app") return;
+       if (!e.data?.action || !e.origin.endsWith("corgi-game-dist.vercel.app"))
+        return;
 
       switch (e.data?.action) {
         case "goToMainScreen":
@@ -108,8 +109,16 @@ if (tg) {
         case "PERFECT_HIT":
           // HAPTIC : top-frame déclenche la vibration pour le mobile
           try {
-            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("medium");
-            navigator.vibrate?.(35);
+             const tg = window.Telegram?.WebApp;
+
+ // iOS : impactOccurred fonctionne
+ if (tg?.HapticFeedback?.impactOccurred?.("medium")) return;
+
+ // Android : impactOccurred est muet → on bascule sur notificationOccurred
+ if (tg?.HapticFeedback?.notificationOccurred?.("success")) return;
+
+ // Fallback navigateur (hors WebApp ou desktop)
+ navigator.vibrate?.(35);
           } catch (_) {/* silence */}
           break;
         default:
