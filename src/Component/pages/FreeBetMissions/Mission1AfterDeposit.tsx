@@ -30,7 +30,7 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
   claimedParts,
 }) => {
   /*───────────── DÉRIVÉS ─────────────*/
-  const milestoneCents = Math.floor(depositAmount / TOTAL_PARTS);
+  const milestone = (depositAmount / TOTAL_PARTS) / 1000;
   const claimableParts = Math.max(0, unlockedParts - claimedParts);
   const isCompleted    = claimedParts === TOTAL_PARTS;
   const nothingToClaim = claimableParts === 0;
@@ -82,8 +82,8 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
               {isCompleted
                 ? "ALL FREE BETS COLLECTED"
                 : nothingToClaim
-                ? `Bet ${formatFreeBet(milestoneCents)} more to unlock`
-                : `COLLECT ${formatFreeBet(claimableParts * milestoneCents)} Free Bets`}
+                ? `Bet ${formatFreeBet(milestone)} more to unlock`
+                : `COLLECT ${formatFreeBet(claimableParts * milestone)} Free Bets`}
             </p>
           </div>
 
@@ -133,14 +133,14 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
                   Bet
                 </span>
                 <span className="text-[14px] font-bold">
-                  ${formatFreeBet(milestoneCents)}
+                  ${formatFreeBet(milestone)}
                 </span>
                 <span
                   className={`text-[11px] mt-[4px] ${
                     i < unlockedParts ? "text-[#00FFB2]" : "text-white/40"
                   }`}
                 >
-                  Get {formatFreeBet(milestoneCents)}<br />Free Bet
+                  Get {formatFreeBet(milestone)}<br />Free Bet
                 </span>
               </div>
             ))}
@@ -183,7 +183,7 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
             </h3>
             <p className="text-sm text-white/80">
               Deposit your first amount. For example, deposit $
-              {(depositAmount / 100).toFixed(0)}.
+              {(depositAmount / 1000).toFixed(3)}.
             </p>
           </div>
 
@@ -193,8 +193,8 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
             </h3>
             <p className="text-sm text-white/80">
               Place real bets. Each time you wager $
-              {formatFreeBet(milestoneCents)} in total, you unlock $
-              {formatFreeBet(milestoneCents)} of free bets.
+              {formatFreeBet(milestone)} in total, you unlock $
+              {formatFreeBet(milestone)} of free bets.
             </p>
           </div>
         </div>

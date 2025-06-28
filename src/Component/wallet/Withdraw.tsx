@@ -98,7 +98,7 @@ const Withdraw: React.FC<WithdrawProps> = ({
             "Content-Type": "application/json",
             Authorization: `tma ${initData}`,
           },
-          body: JSON.stringify({ amount: Math.round(amount * 100) }), // CENT TON
+          body: JSON.stringify({ amount: Math.round(amount * 1000) }), // CENT TON
         }
       );
       const { success } = await res.json();
