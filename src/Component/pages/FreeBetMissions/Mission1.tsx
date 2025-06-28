@@ -32,17 +32,20 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
 
   /* helpers */
   const tg     = window.Telegram?.WebApp;
-  const token  = tg?.initData;
+  const token  = tg?.initData || "";               // ← jamais “undefined”
   const apiURL = import.meta.env.VITE_BACKEND_URL;
 
   /* GET /mission1/status */
   const fetchMissionStatus = useCallback(async () => {
-    if (!token) return;
+    if (!token) {
+      console.warn("⛔️ Pas de token Telegram – requête /mission1/status annulée");
+      return;
+    }
 
     try {
       const r = await fetch(
         `${apiURL}/api/mission1/status`,
-        { headers: { Authorization: `tma ${token}` } },   // headers *seulement* si token
+        { headers: { Authorization: `tma ${token}` } },   // header si token
       );
       if (!r.ok) return;
       const { data } = await r.json();
@@ -55,7 +58,10 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
 
   /* POST /mission1/collect */
   const handleCollect = async () => {
-    if (!token) return;
+    if (!token) {
+      console.warn("⛔️ Pas de token Telegram – requête /mission1/collect annulée");
+      return;
+    }
     try {
       await fetch(
         `${apiURL}/api/mission1/collect`,
