@@ -3,86 +3,80 @@
    ------------------------------------------------------------------ */
 
 import { useEffect, useState, useCallback } from "react";
-import Mission1BeforeDeposit  from "./Mission1BeforeDeposit";
-import Mission1AfterDeposit   from "./Mission1AfterDeposit";
-import { io, Socket }         from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 
-/*────────────── types ──────────────*/
+import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
+import Mission1AfterDeposit  from "./Mission1AfterDeposit";
+
+/*──────── types ────────*/
 interface Mission1StatusPayload {
-  unlockedParts : number;   // 0-5
-  claimedParts  : number;   // 0-5
-  depositCents  : number;   // premier dépôt (sécurité)
+  unlockedParts : number;
+  claimedParts  : number;
+  depositCents  : number;
 }
 
+/*──────── props ────────*/
 interface Mission1Props {
-  onBack         : () => void;
-  onCollect?     : () => void;          // 👉 pour déclencher le popup côté parent
-  hasDeposited?  : boolean;             // valeur initiale (optionnelle)
-  depositAmount? : number;              // valeur initiale (optionnelle, en cents)
+  onBack    : () => void;
+  onCollect?: () => void;          // ouvre le popup succès
 }
 
-/*────────────── composant ──────────────*/
-const Mission1: React.FC<Mission1Props> = ({
-  onBack,
-  onCollect,
-  hasDeposited: initDep,
-  depositAmount: initAmt,
-}) => {
-  /* ------------------------------ état ------------------------------ */
-  const [hasDeposited,  setDep]  = useState<boolean | undefined>(initDep);
-  const [depositCents,  setAmt]  = useState<number | null>(initAmt ?? null);
-  const [unlocked,      setUnl]  = useState<number>(0);
-  const [claimed,       setClm]  = useState<number>(0);
-  const [loading,       setLoad] = useState(initDep === undefined);
+/*───────────────────────────────────────────────────────────*/
+const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
+  /* état */
+  const [hasDeposited, setDep]  = useState<boolean | undefined>();
+  const [depositCents, setAmt]  = useState<number | null>(null);
+  const [unlocked,     setUnl]  = useState(0);
+  const [claimed,      setClm]  = useState(0);
+  const [loading,      setLoad] = useState(true);
 
-  /* ---------------------------- helpers ----------------------------- */
-  const tg      = window.Telegram?.WebApp;
-  const token   = tg?.initData;
-  const headers: Record<string, string> = token ? { Authorization: `tma ${token}` } : {};
+  /* helpers */
+  const tg     = window.Telegram?.WebApp;
+  const token  = tg?.initData;
+  const apiURL = import.meta.env.VITE_BACKEND_URL;
 
-  /** Récupère l’état complet de la mission 1 (unlocked / claimed). */
+  /* GET /mission1/status */
   const fetchMissionStatus = useCallback(async () => {
     if (!token) return;
+
     try {
-      const resp = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/mission1/status`,
-        { headers },
+      const r = await fetch(
+        `${apiURL}/api/mission1/status`,
+        { headers: { Authorization: `tma ${token}` } },   // headers *seulement* si token
       );
-      if (!resp.ok) return;
-      const { data } = await resp.json();
+      if (!r.ok) return;
+      const { data } = await r.json();
       const d = data as Mission1StatusPayload;
       setUnl(d.unlockedParts);
       setClm(d.claimedParts);
       if (d.depositCents && depositCents === null) setAmt(d.depositCents);
-    } catch {/* silence */}
-  }, [token, depositCents]);
+    } catch {/* ignore */ }
+  }, [token, apiURL, depositCents]);
 
-  /** POST /collect puis rafraîchit l’état. */
+  /* POST /mission1/collect */
   const handleCollect = async () => {
     if (!token) return;
     try {
       await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/mission1/collect`,
-        { method: "POST", headers },
+        `${apiURL}/api/mission1/collect`,
+        { method: "POST", headers: { Authorization: `tma ${token}` } },
       );
-      await fetchMissionStatus();           // met à jour l’UI
-      onCollect?.();                        // informe le parent (ouvre popup)
-    } catch (err) {
-      console.error("❌ collect :", err);
-    }
+      await fetchMissionStatus();
+      onCollect?.();
+    } catch (err) { console.error("❌ collect :", err); }
   };
 
-  /* ------------------------- effet principal ------------------------ */
+  /* effet principal */
   useEffect(() => {
     const uid = (tg?.initDataUnsafe as any)?.user?.id as number | undefined;
     if (!token || !uid) { setLoad(false); return; }
 
-    /* 1️⃣ Vérifie s’il existe déjà un dépôt --------------------------- */
-    const checkDeposit = async () => {
+    /* 1️⃣ dépôt déjà fait ? */
+    (async () => {
       try {
         const r = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/user/deposit-status`,
-          { headers },
+          `${apiURL}/api/user/deposit-status`,
+          { headers: { Authorization: `tma ${token}` } },
         );
         if (r.ok) {
           const j = await r.json();
@@ -94,20 +88,13 @@ const Mission1: React.FC<Mission1Props> = ({
             setDep(false);
           }
         }
-      } catch {/* ignore */ }
-      setLoad(false);
-    };
+      } finally {
+        setLoad(false);
+      }
+    })();
 
-    /* Appel initial : seulement si le parent ne nous l’a pas déjà fourni. */
-    if (initDep === undefined) {
-      void checkDeposit();
-    } else {
-      if (initDep) void fetchMissionStatus();
-      setLoad(false);
-    }
-
-    /* 2️⃣ WebSocket pour détecter le tout premier dépôt --------------- */
-    const socket: Socket = io(import.meta.env.VITE_BACKEND_URL, {
+    /* 2️⃣ WebSocket pour détecter le premier dépôt */
+    const socket: Socket = io(apiURL, {
       query: { telegramId: String(uid) },
       transports: ["websocket"],
     });
@@ -118,13 +105,11 @@ const Mission1: React.FC<Mission1Props> = ({
       await fetchMissionStatus();
     });
 
-    /* cleanup */
-    return () => {
-      socket.disconnect();
-    };
-  }, [initDep, fetchMissionStatus]);
+    /* cleanup → toujours void */
+    return () => { socket.disconnect(); };
+  }, [token, apiURL, fetchMissionStatus]);
 
-  /* ----------------------------- rendu ------------------------------ */
+  /* rendu */
   if (loading) {
     return (
       <div className="absolute inset-0 flex items-center justify-center bg-[#160028]/90 z-50">
