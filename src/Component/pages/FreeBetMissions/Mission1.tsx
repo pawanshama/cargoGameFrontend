@@ -1,89 +1,105 @@
-/* src/Component/pages/FreeBetMissions/Mission1.tsx */
-
+/* ------------------------------------------------------------------
+   src/Component/pages/FreeBetMissions/Mission1.tsx
+   ------------------------------------------------------------------ */
 import { useEffect, useState } from "react";
-import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
-import Mission1AfterDeposit  from "./Mission1AfterDeposit";
-import { io, Socket }        from "socket.io-client";
+import Mission1BeforeDeposit  from "./Mission1BeforeDeposit";
+import Mission1AfterDeposit   from "./Mission1AfterDeposit";
+import { io, Socket }         from "socket.io-client";
+
+/*────────────── types ──────────────*/
+interface Mission1StatusPayload {
+  unlockedParts : number;   // 0-5
+  claimedParts  : number;   // 0-5
+  depositCents  : number;
+}
 
 interface Mission1Props {
   onBack: () => void;
-  onCollect: () => void;
-  hasDeposited: boolean | undefined;   // undefined = inconnu
-  depositAmount?: number;
 }
 
-const Mission1: React.FC<Mission1Props> = ({
-  onBack,
-  onCollect,
-  hasDeposited: initDep,
-  depositAmount: initAmt,
-}) => {
-  /* -------- état -------- */
-  const [hasDeposited,  setDep]   = useState<boolean | undefined>(initDep);
-  const [depositAmount, setAmt]   = useState<number | null>(initAmt ?? null);
-  const [loading,       setLoad]  = useState(initDep === undefined);
+/*────────────── composant ──────────────*/
+const Mission1: React.FC<Mission1Props> = ({ onBack }) => {
+  /* --- état --------------------------------------------------- */
+  const [hasDeposited, setDep]  = useState<boolean | undefined>();
+  const [depositCents, setAmt]  = useState<number | null>(null);
+  const [unlocked,     setUnl]  = useState<number>(0);
+  const [claimed,      setClm]  = useState<number>(0);
+  const [loading,      setLoad] = useState(true);
 
-  /* -------- effet -------- */
+  /* --- helpers ------------------------------------------------ */
+  const tg      = window.Telegram?.WebApp;
+  const token   = tg?.initData;
+  const baseUrl = import.meta.env.VITE_BACKEND_URL as string;
+
+  /** fabrique proprement les options fetch avec header auth si dispo */
+  const authOpts = (): RequestInit | undefined =>
+    token ? { headers: { Authorization: `tma ${token}` } } : undefined;
+
+  /** Récupère unlocked / claimed auprès du backend */
+  const fetchMissionStatus = async () => {
+    if (!token) return;
+    const resp = await fetch(`${baseUrl}/api/mission1/status`, authOpts());
+    if (!resp.ok) return;
+    const { data } = await resp.json();
+    const d: Mission1StatusPayload = data;
+    setUnl(d.unlockedParts);
+    setClm(d.claimedParts);
+    if (d.depositCents && depositCents === null) setAmt(d.depositCents);
+  };
+
+  /** POST collect puis refresh */
+  const handleCollect = async () => {
+    if (!token) return;
+    await fetch(`${baseUrl}/api/mission1/collect`, {
+      method : "POST",
+      ...authOpts(),
+    });
+    await fetchMissionStatus();
+  };
+
+  /* --- effet initial + websocket ----------------------------- */
   useEffect(() => {
-    const tg   = window.Telegram?.WebApp;
-    const init = tg?.initData;
-    const uid  = (tg?.initDataUnsafe as any)?.user?.id as number | undefined;
+    const uid = (tg?.initDataUnsafe as any)?.user?.id as number | undefined;
 
-    /* socket déclaré ici pour être visible dans le cleanup */
-    let socket: Socket | null = null;
+    if (!token || !uid) { setLoad(false); return; }
 
-    /* si infos manquantes, on stoppe tout */
-    if (!init || !uid) {
-      setLoad(false);
-      return () => {};                 // cleanup “vide”
-    }
-
-    /* ---- vérifie dépôt ---- */
+    /* 1. Vérifie si dépôt déjà effectué ------------------------ */
     const checkDeposit = async () => {
       try {
-        const r = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/user/deposit-status`,
-          { headers: { Authorization: `tma ${init}` } },
-        );
-        if (!r.ok) return false;
-        const j = await r.json();
-        if (j.hasDeposited && typeof j.depositAmount === "number") {
-          setDep(true);
-          setAmt(j.depositAmount);
-        } else {
-          setDep(false);
+        const r = await fetch(`${baseUrl}/api/user/deposit-status`, authOpts());
+        if (r.ok) {
+          const j = await r.json();
+          if (j.hasDeposited && typeof j.depositAmount === "number") {
+            setDep(true);
+            setAmt(j.depositAmount);
+            await fetchMissionStatus();
+          } else {
+            setDep(false);
+          }
         }
-        setLoad(false);
-        return true;
-      } catch {
-        setLoad(false);
-        return false;
-      }
+      } catch {/* mute erreurs réseau */}
+      setLoad(false);
     };
+    void checkDeposit();
 
-    /* appel initial uniquement si parent ne l’a pas encore */
-    if (initDep === undefined) void checkDeposit();
-    else setLoad(false);
-
-    /* ---- WebSocket “first-deposit” ---- */
-    socket = io(import.meta.env.VITE_BACKEND_URL, {
-      query: { telegramId: String(uid) },
-      transports: ["websocket"],
+    /* 2. WebSocket first-deposit -------------------------------- */
+    let socket: Socket | null = null;
+    socket = io(baseUrl, {
+      query      : { telegramId: String(uid) },
+      transports : ["websocket"],
     });
 
-    socket.on("first-deposit", (p: { amount: number }) => {
+    socket.on("first-deposit", async (p: { amount: number }) => {
       setDep(true);
       setAmt(p.amount);
-      setLoad(false);
+      await fetchMissionStatus();
     });
 
-    /* ---- cleanup ---- */
-    return () => {
-      if (socket) socket.disconnect();
-    };
-  }, [initDep]);
+    /* cleanup */
+    return () => { socket?.disconnect(); };   // ← retourne bien void
+  }, []);                                     // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* -------- rendu -------- */
+  /* --- rendu -------------------------------------------------- */
   if (loading) {
     return (
       <div className="absolute inset-0 flex items-center justify-center bg-[#160028]/90 z-50">
@@ -92,11 +108,13 @@ const Mission1: React.FC<Mission1Props> = ({
     );
   }
 
-  return hasDeposited && depositAmount !== null ? (
+  return hasDeposited && depositCents !== null ? (
     <Mission1AfterDeposit
       onBack={onBack}
-      onCollect={onCollect}
-      depositAmount={depositAmount}
+      onCollect={handleCollect}
+      depositAmount={depositCents}
+      unlockedParts={unlocked}
+      claimedParts={claimed}
     />
   ) : (
     <Mission1BeforeDeposit onBack={onBack} />
