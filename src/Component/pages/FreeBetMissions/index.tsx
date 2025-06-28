@@ -1,153 +1,179 @@
-import { useEffect, useState } from "react";
+/* --------------------------------------------------------------------------
+   src/Component/pages/FreeBetMissions/index.tsx
+   Ultra-modern, glassmorphic redesign ✨
+   --------------------------------------------------------------------------- */
+
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "../../includes/Header";
-import Footer from "../../includes/Footer";
-import Mission1 from "./Mission1";
-import Mission2 from "./Mission2";
+import { motion, AnimatePresence } from "framer-motion";
+import { Rocket, ChevronRight } from "lucide-react";
+
+import Header        from "../../includes/Header";
+import Footer        from "../../includes/Footer";
+import Mission1      from "./Mission1";
+import Mission2      from "./Mission2";
 import PopupMission1 from "./PopupMission1";
 import PopupMission2 from "./PopupMission2";
 
+/* -------------------------------------------------------------------------- */
+/*                          MISSION CONFIGURATION                              */
+/* -------------------------------------------------------------------------- */
 const missions = [
-  {
-    id: 1,
-    title: "Double Your First Deposit!",
-  },
-  {
-    id: 2,
-    title: "Invite Your Friends and Get Up to 150$",
-  },
-];
+  { id: 1, title: "Double Your First Deposit!" },
+  { id: 2, title: "Invite Your Friends and Get Up to $150" },
+] as const;
 
-const FreeBetMissions = () => {
+const API = import.meta.env.VITE_BACKEND_URL;
+
+/* -------------------------------------------------------------------------- */
+/*                                   PAGE                                     */
+/* -------------------------------------------------------------------------- */
+const FreeBetMissions: React.FC = () => {
+  /* ------------------------------ local state ------------------------------ */
   const [activeMission, setActiveMission] = useState<number | null>(null);
-  const [activePopupMission, setActivePopupMission] = useState<number | null>(null);
-  const [hasDeposited, setHasDeposited] = useState<boolean>(false);
-  const [depositAmount, setDepositAmount] = useState<number | undefined>(undefined);
+  const [activePopup,   setActivePopup]   = useState<number | null>(null);
 
-  const [invitedCount, setInvitedCount] = useState<number>(0);
-  const [totalCashback, setTotalCashback] = useState<number>(0);
-  const [yourCashback, setYourCashback] = useState<number>(0);
-  const [friendsCashback, setFriendsCashback] = useState<number>(0);
+  const [hasDeposited,  setHasDeposited]  = useState<boolean | undefined>(); // undefined = loading
+  const [depositAmount, setDepositAmount] = useState<number | undefined>();
 
-  const navigate = useNavigate();
+  const [invitedCount,    setInvited]     = useState(0);
+  const [totalCashback,   setTotalCb]     = useState(0);
+  const [yourCashback,    setYourCb]      = useState(0);
+  const [friendsCashback, setFriendsCb]   = useState(0);
 
-  useEffect(() => {
-    const initData = window.Telegram?.WebApp?.initData;
+  const navigate   = useNavigate();
+  const initData   = window.Telegram?.WebApp.initData;
+
+  /* ------------------------------ fetchers ------------------------------ */
+  const fetchDepositStatus = useCallback(async () => {
     if (!initData) return;
 
-    const checkFirstDeposit = async () => {
-      try {
-        const res = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/user/deposit-status", {
-          headers: {
-            Authorization: `tma ${initData}`,
-          },
-        });
-        const data = await res.json();
-        setHasDeposited(data.hasDeposited);
-        setDepositAmount(data.depositAmount); // ✅
-      } catch (err) {
-        console.error("❌ Erreur lors de la récupération du statut de dépôt :", err);
-      }
-    };
+    try {
+      const res = await fetch(`${API}/api/user/deposit-status`, {
+        headers: { Authorization: `tma ${initData}` },
+      });
+      const j = await res.json();
+      setHasDeposited(j.hasDeposited);
+      setDepositAmount(j.depositAmount);
+    } catch (err) {
+      console.error("❌ deposit-status :", err);
+      setHasDeposited(false);
+    }
+  }, [initData]);
 
-    const fetchInviteStats = async () => {
-      try {
-        const res = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/user/invite-status", {
-          headers: {
-            Authorization: `tma ${initData}`,
-          },
-        });
-        const data = await res.json();
-        setInvitedCount(data.invitedCount || 0);
-        setTotalCashback(data.totalCashback || 0);
-        setYourCashback(data.yourCashback || 0);
-        setFriendsCashback(data.friendsCashback || 0);
-      } catch (err) {
-        console.error("❌ Erreur lors de la récupération des stats d’invitation :", err);
-      }
-    };
+  const fetchInviteStats = useCallback(async () => {
+    if (!initData) return;
 
-    checkFirstDeposit();
+    try {
+      const res = await fetch(`${API}/api/user/invite-status`, {
+        headers: { Authorization: `tma ${initData}` },
+      });
+      const j = await res.json();
+      setInvited(j.invitedCount      ?? 0);
+      setTotalCb(j.totalCashback     ?? 0);
+      setYourCb(j.yourCashback       ?? 0);
+      setFriendsCb(j.friendsCashback ?? 0);
+    } catch (err) {
+      console.error("❌ invite-status :", err);
+    }
+  }, [initData]);
+
+  /* ----------------------------- lifecycle ------------------------------ */
+  useEffect(() => {
+    fetchDepositStatus();
     fetchInviteStats();
-  }, []);
+  }, [fetchDepositStatus, fetchInviteStats]);
 
+  /* ---------------------------------------------------------------------- */
+  /*                                RENDER                                  */
+  /* ---------------------------------------------------------------------- */
   return (
-    <div className="relative w-full bg-gradient-to-b from-[#160028] to-[#2b1048] text-white min-h-screen flex flex-col pb-28">
+    <div className="relative min-h-screen w-full font-lato text-white bg-gradient-to-b from-[#160028] via-[#1c0934] to-[#2b1048] pb-28 overflow-hidden">
+      {/* ---------- Decorative blobs ---------- */}
+      <div className="pointer-events-none absolute -top-20 -left-20 h-96 w-96 rounded-full bg-[#5b2bff]/50 blur-2xl opacity-40" />
+      <div className="pointer-events-none absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-[#00e1ff]/40 blur-2xl opacity-30" />
+
       <Header
         pageHeading={
-          <span className="text-[28px] font-bold font-designer text-white uppercase">
+          <span className="text-[28px] font-bold font-designer uppercase tracking-wider">
             FREE BET MISSIONS
           </span>
         }
       />
 
-      <div className="px-4 pt-2 text-center">
-        <p className="text-[15px] text-white opacity-80">
-          Exciting Rewards Await! Complete Missions and Earn Free Bets!
-        </p>
-      </div>
+      {/* ----------------------------- subtitle ---------------------------- */}
+      <p className="mx-auto mt-2 max-w-md px-4 text-center text-[15px] text-white/80">
+        Exciting Rewards Await! Complete missions and earn <span className="text-[#00FFB2] font-bold">free bets</span>!
+      </p>
 
-      <div className="px-4 mt-6 flex flex-col gap-5">
-        {missions.map((mission) => (
-          <div
-            key={mission.id}
-            className="w-full border border-[#9752b9] rounded-xl px-5 py-4 flex justify-between items-center cursor-pointer active:scale-95 transition-transform duration-100"
-            onClick={() => {
-              if (mission.id === 1 && hasDeposited) return;
-              setActiveMission(mission.id);
-            }}
+      {/* ------------------------- mission cards -------------------------- */}
+      <div className="mx-auto mt-8 flex w-full max-w-lg flex-col gap-6 px-4">
+        {missions.map(({ id, title }) => (
+          <motion.button
+            key={id}
+            type="button"
+            onClick={() => setActiveMission(id)}
+            whileHover={{ y: -4, scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            className="group relative overflow-hidden rounded-2xl p-[1px] shadow-lg shadow-[#000]/40 backdrop-blur-md transition-transform"
           >
-            <div className="flex items-center gap-3">
-              <img src="/assets/rocket.png" alt="rocket" className="w-10 h-10" />
-              <div className="flex flex-col leading-snug">
-                <p className="text-white text-[13px] font-bold font-designer uppercase tracking-wide">
-                  MISSION {mission.id}
-                </p>
-                <p className="text-[#00FFB2] text-[16px] font-bold font-lato leading-tight">
-                  {mission.title}
-                </p>
+            {/* gradient border */}
+            <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#5b2bff] via-[#7e3cff] to-[#00e1ff] opacity-70 group-hover:opacity-100" />
+            {/* inner content */}
+            <div className="flex items-center justify-between rounded-2xl bg-[#1d1233]/90 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <Rocket className="h-9 w-9 text-[#00e1ff] drop-shadow-[0_0_6px_rgba(0,225,255,0.6)]" />
+                <div className="text-left leading-snug">
+                  <p className="font-designer text-sm font-bold uppercase tracking-wide opacity-90">
+                    Mission {id}
+                  </p>
+                  <p className="font-lato text-base font-semibold text-[#00FFB2]">
+                    {title}
+                  </p>
+                </div>
               </div>
+              <ChevronRight className="h-7 w-7 text-white/70 transition-transform group-hover:translate-x-1" />
             </div>
-            <span className="text-white text-[30px] font-bold transition-transform duration-200">
-              &gt;
-            </span>
-          </div>
+          </motion.button>
         ))}
       </div>
 
-      {activeMission === 1 && (
-        <Mission1
-          onBack={() => setActiveMission(null)}
-          onCollect={() => setActivePopupMission(1)}
-          hasDeposited={hasDeposited}
-          depositAmount={depositAmount}
-        />
-      )}
+      {/* ---------------------------- overlays ---------------------------- */}
+      <AnimatePresence>
+        {activeMission === 1 && (
+          <Mission1
+            onBack={() => setActiveMission(null)}
+            onCollect={() => setActivePopup(1)}
+            hasDeposited={hasDeposited}
+            depositAmount={depositAmount}
+          />
+        )}
 
-      {activeMission === 2 && (
-        <Mission2
-          onBack={() => setActiveMission(null)}
-          onCollect={() => setActivePopupMission(2)}
-          invitedCount={invitedCount}
-          totalCashback={totalCashback}
-          yourCashback={yourCashback}
-          friendsCashback={friendsCashback}
-        />
-      )}
+        {activeMission === 2 && (
+          <Mission2
+            onBack={() => setActiveMission(null)}
+            onCollect={() => setActivePopup(2)}
+            invitedCount={invitedCount}
+            totalCashback={totalCashback}
+            yourCashback={yourCashback}
+            friendsCashback={friendsCashback}
+          />
+        )}
+      </AnimatePresence>
 
-      {activePopupMission === 1 && (
+      {/* ----------------------------- pop-ups ----------------------------- */}
+      {activePopup === 1 && (
         <PopupMission1
           onClose={() => {
-            setActivePopupMission(null);
+            setActivePopup(null);
             navigate("/bet");
           }}
         />
       )}
-
-      {activePopupMission === 2 && (
+      {activePopup === 2 && (
         <PopupMission2
           onClose={() => {
-            setActivePopupMission(null);
+            setActivePopup(null);
             navigate("/bet");
           }}
         />

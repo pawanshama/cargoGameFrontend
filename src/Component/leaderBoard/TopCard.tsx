@@ -1,144 +1,145 @@
+/* ===========================================================================
+   src/Component/leaderBoard/TopCard.tsx
+   Version finale — contraste podium, spacing cohérent, flèche bleue ready
+   ========================================================================== */
+
 import React from "react";
+import { motion } from "framer-motion";
 import { CurrencyLeaderBoardIcon } from "../../assets/iconset";
 
-interface TopCardProps {
+/* ----------------------------- TYPES ----------------------------- */
+export interface CardData {
   rank: number;
   profilePic: string;
   title: string;
   amount: number;
-  isLast?: boolean;
-  current: number
+  isCurrentUser?: boolean;
+  isLast?: boolean;          // facultatif mais conservé si tu veux d'autres séparateurs
 }
 
-const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat("en-US", {
+/* --------------------------- HELPERS ----------------------------- */
+const money = (n: number) =>
+  new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(price);
-};
+  }).format(n);
 
-const TopThreeCard: React.FC<{
-  rank: number;
-  profilePic: string;
-  title: string;
-  amount: number;
-  current: number;
-}> = ({ rank, profilePic, title, amount, current }) => (
-  <div
-    className={`flex flex-col gap-[.625rem] items-center w-full ${
-      rank === 2 ? "-order-1" : ""
-    }`}
-  >
-    <div
-      className={`p-[.625rem] flex flex-col items-center gap-[.625rem] rounded-b-2xl w-full ${
-        rank === 1 ? "bg-gradientFirst" : ""
-      } ${rank === 2 ? "bg-gradientSecond" : ""} ${
-        rank === 3 ? "bg-gradientThird" : ""
-      }`}
-    >
-      <h3 className="font-designer text-2xl leading-[1.125rem] text-white text-center">
-        {rank}
-        <span className="text-base">
-          {rank === 1 && "st"}
-          {rank === 2 && "nd"}
-          {rank === 3 && "rd"}
-        </span>
-      </h3>
-      <div
-        className={`${
-          rank === 1 ? "w-[3.875rem] h-[3.875rem]" : "w-[3rem] h-[3rem]"
-        }`}
-      >
-        <img
-          src={profilePic}
-          alt="ProfilePic"
-          loading="lazy"
-          className="w-full"
-        />
-      </div>
-    </div>
-    <div className="flex flex-col justify-center items-center gap-0.5">
-      <h5 className="text-white text">{title} {current === rank && '(you)'}</h5>
-      <div className="flex items-center gap-0.5">
-        <CurrencyLeaderBoardIcon small />
-        <p className="text-primary text">{formatPrice(amount)}</p>
-      </div>
-    </div>
-  </div>
-);
+const suffix = (r: number) =>
+  ["th", "st", "nd", "rd"][(r % 100 >> 3) ^ 1 && r % 10] || "th";
 
-const OtherRankCard: React.FC<{
-  rank: number;
-  profilePic: string;
-  title: string;
-  amount: number;
-  isLast?: boolean;
-  current: number
-}> = ({ rank, profilePic, title, amount, isLast, current }) => (
-  <>
-    <div className="flex gap-4 items-center py-2">
-      <div className="w-[2.625rem] h-[2.625rem]">
-        <img
-          src={profilePic}
-          alt="ProfilePic"
-          loading="lazy"
-          className="w-full"
-        />
-      </div>
-      <div className="flex flex-col gap-1 w-full flex-1">
-        <div className="flex items-center justify-between gap-3 w-full">
-          <h5 className="text-white text">{title} {current === rank && '(you)'}</h5>
-        </div>
-        <div className="flex items-center gap-1">
-          <CurrencyLeaderBoardIcon />
-          <div className="flex gap-0.5 items-center">
-            <p className="text-textColor textSmall">Profit</p>
-            <p className="text-primary textSamllBold">{formatPrice(amount)}</p>
-          </div>
-        </div>
-      </div>
-      <h3 className="font-designer text-2xl leading-[1.125rem] text-white text-center">
-        {rank}
-        <span className="text-[.8125rem] leading-6">th</span>
-      </h3>
-    </div>
-    {!isLast && <div className="w-full stroke h-[.0625rem]"></div>}
-  </>
-);
+/* ------------------------ PODIUM CARD --------------------------- */
+const podiumPalette = [
+  /* Gold   */ ["#f5c83b", "#dba927"],
+  /* Silver */ ["#adb4c2", "#8d949f"],
+  /* Bronze */ ["#c1834d", "#a06b39"],
+];
 
-const TopCard: React.FC<TopCardProps> = ({
+const PodiumCard: React.FC<CardData> = ({
   rank,
   profilePic,
   title,
   amount,
-  isLast,
-  current
+  isCurrentUser,
 }) => {
-  return (
-    <>
-      {rank <= 3 ? (
-        <TopThreeCard
-          rank={rank}
-          profilePic={profilePic}
-          title={title}
-          amount={amount}
-          current={current}
-        />
-      ) : (
-        <OtherRankCard
-          rank={rank}
-          profilePic={profilePic}
-          title={title}
-          amount={amount}
-          isLast={isLast}
-          current={current}
+  const [from, to]  = podiumPalette[rank - 1];
+  const size        = rank === 1 ? "h-20 w-20" : "h-16 w-16";
 
-        />
+  return (
+    <motion.li
+      layout
+      whileHover={{ y: -4 }}
+      className="relative flex w-full flex-col items-center gap-2 rounded-b-3xl p-4"
+      style={{ background: `linear-gradient(135deg,${from} 0%,${to} 100%)` }}
+    >
+      {/* Rank */}
+      <h3 className="font-designer text-3xl text-white drop-shadow">
+        {rank}
+        <span className="text-xl">{suffix(rank)}</span>
+      </h3>
+
+      {/* Avatar */}
+      <img
+        src={profilePic}
+        alt={`${title} avatar`}
+        className={`${size} rounded-full ring-2 ring-white/70 object-cover`}
+        loading="lazy"
+      />
+
+      {/* Name */}
+      <p className="max-w-[6rem] truncate text-sm font-semibold text-white/90 text-center">
+        {title}
+      </p>
+
+      {/* Profit */}
+      <div className="flex items-center gap-1">
+        <CurrencyLeaderBoardIcon small />
+        <span className="text-primary text-sm">{money(amount)}</span>
+      </div>
+
+      {/* YOU badge */}
+      {isCurrentUser && (
+        <span className="absolute -top-2 -right-2 rounded-full bg-[#2CFD95] px-2 py-[2px] text-[10px] font-bold text-black shadow">
+          YOU
+        </span>
       )}
-    </>
+    </motion.li>
   );
 };
+
+/* -------------------------- ROW CARD --------------------------- */
+const RowCard: React.FC<CardData> = ({
+  rank,
+  profilePic,
+  title,
+  amount,
+  isCurrentUser,
+}) => (
+  <motion.div
+    layout
+    whileHover={{ scale: 1.015 }}
+    className="relative flex items-center gap-4 rounded-xl bg-white/5/30 px-4 py-3 backdrop-blur-md"
+  >
+    {/* highlight */}
+    {isCurrentUser && (
+      <div className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-[#6443ff]/35 to-[#22e584]/35" />
+    )}
+
+    {/* badge */}
+    {isCurrentUser && (
+      <span className="absolute -top-2 -right-2 rounded-full bg-[#2CFD95] px-2 py-[2px] text-[10px] font-bold text-black shadow">
+        YOU
+      </span>
+    )}
+
+    {/* avatar */}
+    <img
+      src={profilePic}
+      alt={`${title} avatar`}
+      className="h-10 w-10 rounded-full ring-1 ring-white/40 object-cover"
+      loading="lazy"
+    />
+
+    {/* player info */}
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <p className="truncate text-sm font-medium text-white">{title}</p>
+      <div className="flex items-baseline gap-1">
+        <CurrencyLeaderBoardIcon />
+        <span className="text-xs text-gray-300">Profit</span>
+        <span className="text-sm font-semibold text-primary">{money(amount)}</span>
+      </div>
+    </div>
+
+    {/* Rank */}
+    <h3 className="font-designer text-2xl text-white">
+      {rank}
+      <span className="text-[0.8rem]">{suffix(rank)}</span>
+    </h3>
+  </motion.div>
+);
+
+/* --------------------------- EXPORT ----------------------------- */
+const TopCard: React.FC<CardData> = (props) =>
+  props.rank <= 3 ? <PodiumCard {...props} /> : <RowCard {...props} />;
 
 export default TopCard;

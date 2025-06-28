@@ -53,7 +53,7 @@ const IncrementDecrementInput: React.FC<IncrementDecrementInputProps> = ({
     setTimeout(() => setPressedSuggestion(null), 100);
   };
 
-  const formatCurrency = (num: number) => `$${num.toFixed(2)}`;
+  const formatCurrency = (num: number) => `$${num}`;
 
   useEffect(() => {
     if (onAmountChange) onAmountChange(value);
@@ -119,9 +119,12 @@ const IncrementDecrementInput: React.FC<IncrementDecrementInputProps> = ({
           <button
             key={`suggestion-${suggestion}`}
             onClick={() => handleSuggestionClick(suggestion)}
-            className={`p-2 shadow-[0px_2px_2px_0px_rgba(0,0,0,0.45)_inset] border border-secondary bg-gradient-to-b from-[#9752B8] to-[#613693] text-white rounded-2xl buttonFont text-[clamp(10px,5vw,16px)] flex items-center justify-center transition-transform duration-100 will-change-transform ${
-              pressedSuggestion === suggestion ? "scale-90" : "scale-100"
-            }`}
+            className={`w-[80px] h-[42px] px-2 shadow-[0px_2px_2px_0px_rgba(0,0,0,0.45)_inset] border border-secondary bg-gradient-to-b from-[#9752B8] to-[#613693] text-white rounded-2xl buttonFont text-base flex items-center justify-center transition-transform duration-100 will-change-transform ${
+  pressedSuggestion === suggestion ? "scale-90" : "scale-100"
+}`}
+
+
+
           >
             {formatCurrency(suggestion)}
           </button>

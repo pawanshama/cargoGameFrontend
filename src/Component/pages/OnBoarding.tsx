@@ -1,137 +1,155 @@
-import { useEffect, useState } from "react";
-import LogoBig from "../../assets/images/logoBig.png";
-import LogoBigOptimised from "../../assets/images/logoBig.webp";
-import { authDataSelector } from "../../redux/reducers/userSlice";
-import { useNavigate } from "react-router-dom";
-import ImgWithFallback from "../common/ImageWithFallback";
-import { useAppSelector } from "../../redux/hooks";
+/*  src/Component/pages/OnBoarding.tsx
+    – responsive neon loader (v3-final)                              */
 
-declare global {
-  interface Window {
-    Telegram?: any;
-  }
-}
+import { useEffect, useState }          from "react";
+import { useNavigate }                  from "react-router-dom";
+import { motion, AnimatePresence }      from "framer-motion";
 
-interface ProgressProps {
-  percentage: number;
-}
+import ImgWithFallback                  from "../common/ImageWithFallback";
+import LogoBig                           from "../../assets/images/logoBig.png";
+import LogoBigOptimised                  from "../../assets/images/logoBig.webp";
 
-interface ProgressCircleProps extends ProgressProps {
-  strokeWidth?: number;
-  sqSize?: number;
-}
+import { authDataSelector }             from "../../redux/reducers/userSlice";
+import { useAppSelector }               from "../../redux/hooks";
 
-const ProgressCircle: React.FC<ProgressCircleProps> = ({
-  strokeWidth = 4,
-  sqSize = 68,
-  percentage,
-}) => {
-  const radius = (sqSize - strokeWidth) / 2;
-  const viewBox = `0 0 ${sqSize} ${sqSize}`;
-  const dashArray = radius * Math.PI * 2;
-  const dashOffset = dashArray - (dashArray * percentage) / 100;
+/* ─────────────────────────────── ring ────────────────────────────── */
+const NeonRing: React.FC<{ pct: number }> = ({ pct }) => {
+  /* diamètre : 18 vw (entre 72 px et 130 px) */
+  const size      = Math.max(72, Math.min(130, window.innerWidth * 0.18));
+  const stroke    = Math.max(5, Math.min(7, size * 0.055));      // 5-7 px
+  const dotR      = Math.max(4, Math.min(6, size * 0.047));      // 4-6 px
+  const r         = (size - stroke - dotR * 2 - 2) / 2;          // marge 1 px
+  const c         = 2 * Math.PI * r;
+  const dashOff   = c * (1 - pct / 100);
 
-  const angle = (percentage / 100) * 360;
-  const radian = (angle - 90) * (Math.PI / 180); // Adjusting by 90 degrees to start from top center
-  const dotRadius = strokeWidth / 2;
-  const adjustedRadius = radius - dotRadius; // Adjust radius to keep dot inside the circle
-  const dotX = sqSize / 2 + adjustedRadius * Math.cos(radian);
-  const dotY = sqSize / 2 + adjustedRadius * Math.sin(radian);
+  const ang       = (pct / 100) * 360 - 90;
+  const rad       = (ang * Math.PI) / 180;
+  const cx        = size / 2 + r * Math.cos(rad);
+  const cy        = size / 2 + r * Math.sin(rad);
 
   return (
-    <div>
-      <svg
-        className="block m-auto"
-        width={sqSize}
-        height={sqSize}
-        viewBox={viewBox}
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} shapeRendering="geometricPrecision">
+      <defs>
+        <linearGradient id="g" gradientTransform="rotate(90)">
+          <stop offset="0%"   stopColor="#00ffa2" />
+          <stop offset="100%" stopColor="#0066ff" />
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="4" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      {/* piste */}
+      <circle cx="50%" cy="50%" r={r} stroke="#4d2e7d" strokeWidth={stroke} opacity={0.3} fill="none" />
+
+      {/* progression */}
+      <circle
+        cx="50%" cy="50%" r={r}
+        stroke="url(#g)" strokeWidth={stroke} strokeLinecap="round"
+        strokeDasharray={c} strokeDashoffset={dashOff}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        fill="none" filter="url(#glow)"
+      />
+
+      {/* dot */}
+      <circle cx={cx} cy={cy} r={dotR}        fill="#fff" />
+      <circle cx={cx} cy={cy} r={dotR * 0.45} fill="#5f5d72" />
+
+      {/* pourcentage */}
+      <text
+        x="50%" y="50%" dy=".28em" textAnchor="middle"
+        className="fill-white font-bold"
+        style={{ fontSize: size * 0.18 }}
       >
-        <defs>
-          <linearGradient id="progressGradient" gradientTransform="rotate(90)">
-            <stop offset="0%" stopColor="#00FF92" />
-            <stop offset="100%" stopColor="#006400" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M64 33.5C64 37.571 63.1982 41.6021 61.6403 45.3632C60.0824 49.1243 57.7989 52.5417 54.9203 55.4203C52.0417 58.2989 48.6243 60.5824 44.8632 62.1403C41.1021 63.6982 37.071 64.5 33 64.5C28.929 64.5 24.8979 63.6982 21.1368 62.1403C17.3757 60.5824 13.9583 58.2989 11.0797 55.4203C8.20107 52.5417 5.91763 49.1243 4.35973 45.3632C2.80184 41.6021 2 37.571 2 33.5C2 29.429 2.80184 25.3979 4.35974 21.6368C5.91764 17.8757 8.20108 14.4583 11.0797 11.5797C13.9583 8.70107 17.3757 6.41762 21.1368 4.85973C24.8979 3.30183 28.929 2.5 33 2.5C37.071 2.5 41.1021 3.30184 44.8632 4.85974C48.6243 6.41764 52.0417 8.70108 54.9203 11.5797C57.7989 14.4583 60.0824 17.8757 61.6403 21.6368C63.1982 25.3979 64 29.429 64 33.5L64 33.5Z"
-          stroke="#7848B4"
-          strokeOpacity="0.5"
-          strokeWidth="3.95745"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
-        />
-        <circle
-          cx={sqSize / 2}
-          cy={sqSize / 2 - 2}
-          r={radius}
-          stroke="url(#progressGradient)"
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          fill="none"
-          strokeDasharray={dashArray}
-          strokeDashoffset={dashOffset}
-          transform="rotate(-90, 34, 34)"
-        />
-        <circle cx={dotX} cy={dotY} r="3.5" fill="white" />
-        <circle cx={dotX} cy={dotY} r="1.5" fill="#757279" />
-        <text
-          className="z-10 fill-current textBold text-textColor"
-          x="50%"
-          y="50%"
-          dy=".3em"
-          textAnchor="middle"
-        >
-          {`${percentage}%`}
-        </text>
-      </svg>
-    </div>
+        {pct.toFixed(0)}%
+      </text>
+    </svg>
   );
 };
 
-const OnBoarding = () => {
-  const [percent] = useState(25);
+/* ─────────────────────────────── page ────────────────────────────── */
+const OnBoarding: React.FC = () => {
+  const [pct, setPct] = useState(0);
+  const born          = useState(() => Date.now())[0];
+
+  const { isAuthenticated, token, refreshToken, userDetails } =
+    useAppSelector(authDataSelector);
   const navigate = useNavigate();
-  const { isAuthenticated, token, refreshToken, userDetails } = useAppSelector(authDataSelector);
 
+  /* animation 0 → 90 % */
   useEffect(() => {
-  const initTelegram = async () => {
-    const { WebApp } = window.Telegram;
-    WebApp.ready();
-    console.log("✅ Telegram ready, InitData:", WebApp.initData);
+    let i = 0;
+    const id = setInterval(() => {
+      i += 1;
+      if (i <= 90) setPct(i);
+      if (i >= 90) clearInterval(id);
+    }, 16);
+    return () => clearInterval(id);
+  }, []);
 
-    // Tu peux traiter WebApp.initData ici si besoin
-  };
-
-  if (window.Telegram) {
-    initTelegram();
-  } else {
-    console.error("Telegram WebApp is not disponible");
-  }
-}, []);
-
+  /* passe à 100 % puis redirige */
   useEffect(() => {
-    localStorage.clear();
-    if (isAuthenticated && userDetails) {
-      localStorage.setItem("token", token);
+    if (!isAuthenticated || !userDetails) return;
+    const delay = Math.max(0, 1500 - (Date.now() - born));
+
+    const id = setTimeout(() => {
+      setPct(100);
+      localStorage.setItem("token",        token);
       localStorage.setItem("refreshToken", refreshToken);
-      localStorage.setItem("userDetails", userDetails);
-      navigate("/bet");
-    }
-  }, [isAuthenticated, userDetails]);
+      localStorage.setItem("userDetails",  JSON.stringify(userDetails));
+      navigate("/bet", { replace: true });
+    }, delay);
 
+    return () => clearTimeout(id);
+  }, [isAuthenticated, userDetails, token, refreshToken, navigate, born]);
+
+  /* ─────────────────────────── UI ─────────────────────────── */
   return (
-    <div className="w-full h-[100dvh] relative flex flex-col items-center justify-center">
-      <ImgWithFallback
-        src={LogoBigOptimised}
-        fallback={LogoBig}
-        alt="Logo"
-        loading="lazy"
-        className="max-w-[640px] w-full object-contain"
+    <div className="w-full h-screen flex flex-col items-center justify-center overflow-hidden relative
+                    bg-gradient-to-br from-[#12001e] via-[#1d0038] to-[#090012]">
+
+      {/* halo animé (pointer-events none pour éviter tout focus) */}
+      <motion.div
+        className="absolute w-[140%] h-[140%] pointer-events-none
+                   bg-[radial-gradient(circle_at_center,rgba(0,255,185,0.45),transparent_65%)]"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1.25, opacity: 0.17, rotate: 45 }}
+        transition={{ repeat: Infinity, duration: 12, ease: "linear" }}
       />
-      <div className="absolute z-10 flex items-center justify-center -translate-x-1/2 -translate-y-6 left-1/2 top-3/4">
-        <ProgressCircle percentage={percent} />
-      </div>
+
+      {/* logo */}
+      <AnimatePresence>
+        <motion.div
+          key="logo"
+          className="relative z-10 w-[clamp(220px,60vw,600px)]"
+          initial={{ y: 40, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+        >
+          <ImgWithFallback
+            src={LogoBigOptimised}
+            fallback={LogoBig}
+            alt="Corgi in Space"
+            loading="eager"
+            className="w-full h-auto select-none pointer-events-none"
+          />
+        </motion.div>
+      </AnimatePresence>
+
+      {/* anneau de chargement */}
+      <motion.div
+        className="w-full flex justify-center mt-[clamp(3rem,8vh,5.25rem)]"
+        initial={{ y: 28, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.25 }}
+      >
+        <NeonRing pct={pct} />
+      </motion.div>
     </div>
   );
 };

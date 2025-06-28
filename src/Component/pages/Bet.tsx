@@ -1,4 +1,13 @@
-import { useState, useEffect, useMemo, memo } from "react";
+/* src/Component/pages/Bet.tsx */
+
+import {
+  useState,
+  useEffect,
+  useMemo,
+  memo,
+  useLayoutEffect,
+  useCallback,
+} from "react";
 import Footer from "../includes/Footer";
 import Header from "../includes/Header";
 import Statistics from "../modals/Statistics";
@@ -11,23 +20,25 @@ import UserTable from "../bet/UserTable";
 import OnlinePlayersStats from "../bet/OnlinePlayersStats";
 import ImgWithFallback from "../common/ImageWithFallback";
 import useTelegramSafeSound from "../../hooks/useTelegramSafeSound";
-import MatchResult from "../pages/MatchResult";
+import MatchResult from "./MatchResult";
+import { motion } from "framer-motion";
 
-const PotentialWinnings = memo(({ amount, multiplier }: { amount: number; multiplier: number }) => {
-  return (
-    <div className="px-3 py-[0.25rem] will-change-transform rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 shadow-md text-white w-full max-w-[10rem] text-center min-h-[2rem] transition-none">
-      <p className="text-[0.65rem] font-medium opacity-90 tracking-wide leading-tight pointer-events-none select-none min-h-[1rem]">
-        Potential winnings
-      </p>
-      <p className="text-sm font-bold mt-[0.15rem] min-h-[1.25rem]">
-        ${ (amount * multiplier).toFixed(2) }
-      </p>
+
+/* ---------- Helpers ---------- */
+const PotentialWinnings = memo(
+  ({ amount, multiplier }: { amount: number; multiplier: number }) => (
+    <div className="px-3 py-[0.25rem] rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 shadow-md text-white w-full max-w-[10rem] text-center min-h-[2rem]">
+      <p className="text-[0.65rem] font-medium opacity-90">Potential winnings</p>
+      <p className="text-sm font-bold">${(amount * multiplier).toFixed(2)}</p>
     </div>
-  );
-});
+  ),
+);
 
-const Bet = () => {
-  const [matchResult, setMatchResult] = useState<null | {
+/* ---------- Component ---------- */
+const Bet: React.FC = () => {
+  /* state */
+  const [pageReady, setPageReady]         = useState(false); // évite le flash
+  const [matchResult, setMatchResult]     = useState<null | {
     result: "Won" | "Lost" | "Draw";
     userScore: number;
     opponentScore: number;
@@ -36,133 +47,135 @@ const Bet = () => {
   }>(null);
 
   const [isStatisticsShow, setIsStatisticsShow] = useState(false);
-  const [selectedRadio, setSelectedRadio] = useState("ton");
-  const [showGame, setShowGame] = useState(false);
-  const [gameUrl, setGameUrl] = useState<string | null>(null);
-  const [multiplier, setMultiplier] = useState(1);
-  const [amount, setAmount] = useState(0.1);
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipX, setTooltipX] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-    const [resetKey, setResetKey] = useState(0);
-  const [showUI, setShowUI] = useState(true); // NEW
+  const [selectedRadio, setSelectedRadio]       = useState("ton");
+  const [showGame, setShowGame]                 = useState(false);
+  const [gameUrl, setGameUrl]                   = useState<string | null>(null);
+  const [multiplier, setMultiplier]             = useState(1);
+  const [amount, setAmount]                     = useState(0.1);
+  const [showTooltip, setShowTooltip]           = useState(false);
+  const [tooltipX, setTooltipX]                 = useState(0);
+  const [isLoading, setIsLoading]               = useState(false);
 
+  /* sounds */
+  const suggestions       = useMemo(() => [1, 5, 25, 100], []);
+  const playSelectRadio   = useTelegramSafeSound("/assets/sounds/13Select-Demofreeusdt.mp3");
+  const playBetSound      = useTelegramSafeSound("/assets/sounds/4Bet.mp3");
+  const playAmountSound   = useTelegramSafeSound("/assets/sounds/12Select-Amountbet.mp3");
 
-  const suggestions = useMemo(() => [1, 5, 25, 100, 500], []);
-  const playSelectRadio = useTelegramSafeSound("/assets/sounds/13Select-Demofreeusdt.mp3");
-  const playBetSound = useTelegramSafeSound("/assets/sounds/4Bet.mp3");
-  const playAmount = useTelegramSafeSound("/assets/sounds/12Select-Amountbet.mp3");
-
-    useEffect(() => {
-    const VERSION = "1.0.0";
-    const LAST_VERSION = localStorage.getItem("app_version");
-    if (LAST_VERSION !== VERSION) {
-      localStorage.setItem("app_version", VERSION);
-      window.location.href = window.location.pathname + "?v=" + Date.now();
+  /* ------------------------------------------------------------------ */
+  /* 1. Synchronisation Telegram → ready() + expand()                   */
+  /* ------------------------------------------------------------------ */
+  useLayoutEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    if (!tg) {
+      setPageReady(true);
       return;
     }
-  }, []);
 
-  useEffect(() => {
-    const readyInterval = setInterval(() => {
-      if (window.Telegram?.WebApp?.ready) {
-        window.Telegram.WebApp.ready();
-        clearInterval(readyInterval);
-      }
-    }, 100);
 
-     const reloadOnResume = () => {
-      console.log("[Telegram] Resume → React reset + reflow");
-      setShowUI(false);
-      setResetKey(prev => prev + 1);
-      setMultiplier(1);
+if (tg) {
+  tg.ready();
+  const expanded = (tg as any).isExpanded as boolean | undefined;
+  if (!expanded) tg.expand();
+}
+
+
+
+    const onResume = () => {
       setAmount(0);
-
-      setTimeout(() => {
-        setShowUI(true);
-      }, 50);
+      setMultiplier(1);
     };
-    window.Telegram?.WebApp?.onEvent("resume", reloadOnResume);
+    tg.onEvent("resume", onResume);
 
-    return () => {
-      clearInterval(readyInterval);
-      window.Telegram?.WebApp?.offEvent("resume", reloadOnResume);
-    };
+    setPageReady(true);
+    return () => tg.offEvent("resume", onResume);
   }, []);
 
-  const handleRadioChange = (selectedId: string) => {
-    if (selectedId !== selectedRadio) playSelectRadio();
-    setSelectedRadio(selectedId);
+  /* 2. iFrame → retour au lobby */
+  useEffect(() => {
+  const handler = (e: MessageEvent) => {
+      // Vérifie l’origine (remplace par le domaine réel du jeu)
+       if (!e.data?.action || !e.origin.endsWith("corgi-game-dist.vercel.app"))
+        return;
+
+      switch (e.data?.action) {
+        case "goToMainScreen":
+          setShowGame(false);
+          setGameUrl(null);
+          setMatchResult(null);
+          setIsLoading(false);
+          break;
+
+        case "PERFECT_HIT":
+          // HAPTIC : top-frame déclenche la vibration pour le mobile
+          try {
+             const tg = window.Telegram?.WebApp;
+
+ // iOS : impactOccurred fonctionne
+ if (tg?.HapticFeedback?.impactOccurred?.("medium")) return;
+
+ // Android : impactOccurred est muet → on bascule sur notificationOccurred
+ if (tg?.HapticFeedback?.notificationOccurred?.("success")) return;
+
+ // Fallback navigateur (hors WebApp ou desktop)
+ navigator.vibrate?.(35);
+          } catch (_) {/* silence */}
+          break;
+        default:
+          break; 
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
+
+  /* 3. Select radio */
+  const handleRadioChange = (id: string) => {
+    if (id !== selectedRadio) playSelectRadio();
+    setSelectedRadio(id);
   };
 
-const handleLaunchGame = async () => {
-  console.log("▶️ handleLaunchGame lancé");
-  console.log("Mise :", amount);
-  if (isLoading || amount < 0.1) {
-    console.warn("⛔ Mise invalide ou chargement en cours");
-    return;
-  }
+  /* 4. Bet / launch game */
+  const handleLaunchGame = useCallback(async () => {
+    if (isLoading || amount < 0.1) return;
 
-  try {
-    setIsLoading(true);
-    playBetSound();
+    try {
+      setIsLoading(true);
+      playBetSound();
 
-    const initData = window.Telegram?.WebApp?.initData;
-    if (!initData) throw new Error("initData non trouvé");
+      const initData = window.Telegram?.WebApp?.initData;
+      if (!initData) throw new Error("initData missing");
 
-    // Appel sécurisé : /match/start
-// 🎯 Appel sécurisé à /match/start
-const tokenRes = await fetch("https://corgi-in-space-backend-production.up.railway.app/api/match/start", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `tma ${initData}`, // Toujours initData ici
-  },
-  body: JSON.stringify({
-    betAmount: amount, // La mise uniquement (le backend génère matchId, poolId, etc.)
-  }),
-});
+      const r = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/match/start`,
+        {
+          method : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization : `tma ${initData}`,
+          },
+          body: JSON.stringify({ betAmount: amount }),
+        },
+      );
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
 
-// 🧪 Vérifie la réponse HTTP
-if (!tokenRes.ok) {
-  const text = await tokenRes.text();
-  throw new Error(`Erreur HTTP ${tokenRes.status} : ${text}`);
-}
+      const { matchToken } = await r.json();
+      if (!matchToken) throw new Error("token missing");
 
-// ✅ Récupère et vérifie le token
-const resJson = await tokenRes.json();
-console.log("📡 Réponse du backend /match/start :", resJson);
+      const url = new URL("https://corgi-game-dist.vercel.app/");
+      url.searchParams.set("token", matchToken);
+      url.searchParams.set("initData", encodeURIComponent(initData));
 
-const { matchToken: token } = resJson;
+      setGameUrl(url.toString());
+      setShowGame(true);
+    } catch (err) {
+      console.error(err);
+      setIsLoading(false);
+    }
+  }, [isLoading, amount, playBetSound]);
 
-if (!token) {
-  throw new Error("❌ Token manquant dans la réponse backend");
-}
-
-// 🕹️ Injection du token dans l'URL du jeu
-const url = new URL("https://corgi-game-dist.vercel.app/");
-url.searchParams.set("token", token);
-console.log("🎯 Token injecté dans l'iframe :", url.toString());
-
-setGameUrl(url.toString());
-setShowGame(true);
-
-  } catch (error) {
-    console.error("❌ Erreur pendant le matchmaking :", error);
-    setIsLoading(false);
-  }
-};
-
-
-
-  
-
-
-
-
-  const handleAmountClick = () => playAmount();
-
-  if (matchResult) {
+  /* 5. Match result overlay */
+  if (matchResult)
     return (
       <MatchResult
         {...matchResult}
@@ -170,13 +183,11 @@ setShowGame(true);
           setMatchResult(null);
           handleLaunchGame();
         }}
-        onQuit={() => {
-          setMatchResult(null);
-        }}
+        onQuit={() => setMatchResult(null)}
       />
     );
-  }
 
+/* 6. In-game iframe */
 if (showGame && gameUrl) {
   return (
     <div className="w-full h-[100dvh] overflow-hidden">
@@ -184,26 +195,28 @@ if (showGame && gameUrl) {
         src={gameUrl}
         title="Corgi Game"
         className="w-full h-full border-none"
-        allow="autoplay; fullscreen"
-      />
+        allow="autoplay; fullscreen; vibrate"
+      /> {/* autorise navigator.vibrate */}
     </div>
   );
 }
 
 
+  /* 7. — LOBBY — */
+  if (!pageReady) return null; // évite flash
 
-
-    return (
+  return (
     <>
       <div className="w-full bet-bg h-[100dvh]">
         <Header pageHeading="" />
+
         <div className="px-4 pb-[7.5rem] h-[calc(100dvh_-_clamp(4rem,60vw,6.05rem))] overflow-y-auto">
+          {/* ---------- live table + stats ---------- */}
           <div className="flex gap-4 items-center">
             <div className="flex-1">
-              <div className="flex items-center justify-center">
-                <div className="flex justify-center tableFont text-white bg-tableRow p-[.375rem] gap-1 rounded-3xl">
-                  Live bets
-                  <span className="h-[.375rem] w-[.375rem] block bg-primary rounded-full"></span>
+              <div className="flex justify-center">
+                <div className="flex items-center tableFont text-white bg-tableRow px-2 py-1 gap-1 rounded-3xl">
+                  Live bets <span className="h-2 w-2 bg-primary rounded-full" />
                 </div>
               </div>
               <UserTable />
@@ -214,21 +227,28 @@ if (showGame && gameUrl) {
             />
           </div>
 
-          <div className="flex items-center justify-center relative z-[1] h-[9.05rem] mt-[-0.375rem]">
+          {/* ---------- mascot ---------- */}
+          <div className="flex justify-center h-[9rem] mt-[-0.375rem]">
             <ImgWithFallback
               src={CorgiOptimised}
               fallback={Corgi}
               alt="corgi-with-shadow"
-              loading="lazy"
-              className="object-contain w-full h-[9.05rem]"
+              loading="eager"
+              className="object-contain w-full"
             />
           </div>
 
-          <div className="p-2 mt-[-1.7375rem] flex flex-col gap-[.625rem] rounded-2xl backdrop-blur-[.4375rem] bg-[rgba(45,30,99,0.10)]">
-            <div className="flex justify-between gap-2 items-start">
-              <div className="flex flex-col gap-2 mb-3">
-                <p className="text-sm text-white font-medium">Choose your bet source:</p>
-                <div className="flex items-center gap-2">
+          {/* ---------- bet panel ---------- */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-2 -mt-6 flex flex-col gap-3 rounded-2xl backdrop-blur-[6px] bg-[rgba(45,30,99,0.15)]"
+          >
+            {/* source + amount */}
+            <div className="flex gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-white mb-1">Choose your bet source</p>
+                <div className="flex gap-2">
                   <DynamicRadio
                     label="TON"
                     id="ton"
@@ -244,91 +264,74 @@ if (showGame && gameUrl) {
                     onChange={handleRadioChange}
                   />
                 </div>
-              </div>
 
-              <div className="flex flex-col items-center justify-center text-center" style={{ transform: "translateX(-16px)" }}>
-                <p className="textSmall text-white">Balance Available</p>
-                <p className="text-base text-white font-black leading-4">
-                  $0.00 <span className="text-xs font-normal">USD</span>
-                </p>
-                <p className="text-xs text-white font-normal">
-                  {selectedRadio === "ton" && "0 TON"}
-                  {selectedRadio === "free-bet" && "Free Bets"}
-                  {selectedRadio === "play-demo" && "Demo Mode"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <div className="flex items-start gap-4">
-                <div className="flex-1 max-w-[70%]">
-                  {showUI && (
-                    <IncrementDecrementInput
-                      key={resetKey}
-                      suggestions={suggestions}
-                      onAmountClick={handleAmountClick}
-                      onAmountChange={(value) => setAmount(value)}
-                    />
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-2 items-start">
-                  <Button
-                    type="button"
-                    label="Bet"
-                    additionalClass="!px-3 h-[3.75rem] w-full text-center justify-center max-w-[10rem] mt-[-0.01rem] rounded-xl transition-transform duration-100 active:scale-95"
-                    handleButtonClick={handleLaunchGame}
+                <div className="mt-3">
+                  <IncrementDecrementInput
+                    suggestions={suggestions}
+                    onAmountClick={() => playAmountSound()}
+                    onAmountChange={setAmount}
                   />
-                  {showUI && (
-                    <PotentialWinnings
-                      key={resetKey}
-                      amount={amount}
-                      multiplier={multiplier}
-                    />
-                  )}
                 </div>
               </div>
 
-              <div className="-mt-2 px-2 flex items-center gap-3">
-                {showUI && (
-                  <div className="relative w-full max-w-[85%]" key={resetKey}>
-                    <input
-                      type="range"
-                      min="1"
-                      max="10"
-                      step="0.1"
-                      value={multiplier}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value);
-                        setMultiplier(value);
-                        const percent = ((value - 1) / 9) * 100;
-                        setTooltipX(percent);
-                      }}
-                      onMouseDown={() => setShowTooltip(true)}
-                      onMouseUp={() => setShowTooltip(false)}
-                      onTouchStart={() => setShowTooltip(true)}
-                      onTouchEnd={() => setShowTooltip(false)}
-                      className="w-full appearance-none bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full cursor-pointer"
-                    />
-                    {showTooltip && (
-                      <div
-                        className="absolute -top-7 transform -translate-x-1/2 px-2 py-1 bg-white text-black text-xs font-bold rounded shadow pointer-events-none"
-                        style={{ left: `calc(${tooltipX}% - 8px)` }}
-                      >
-                        x{multiplier.toFixed(1)}
-                      </div>
-                    )}
-                  </div>
-                )}
+              {/* side card */}
+              <div className="flex flex-col gap-2 items-start shrink-0 max-w-[10rem]">
+                <div className="px-5 py-1 rounded-xl border border-white/20 bg-white/10 backdrop-blur-md text-center text-white w-full">
+                  <p className="text-[0.65rem] opacity-70">Balance Available</p>
+                  <p className="text-base font-extrabold">$0.00</p>
+                  <p className="text-[0.6rem] opacity-60">
+                    {selectedRadio === "ton"      && "0 TON"}
+                    {selectedRadio === "free-bet" && "Free Bets"}
+                  </p>
+                </div>
 
-                {showUI && (
-                  <div className="px-3 py-[0.375rem] rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-bold shadow-md">
-                    x{multiplier.toFixed(1)}
-                  </div>
-                )}
+                <Button
+                  type="button"
+                  label="Bet"
+                  additionalClass="animate-pulse-zoom w-full rounded-xl active:scale-95"
+                  handleButtonClick={handleLaunchGame}
+                />
+
+                <PotentialWinnings amount={amount} multiplier={multiplier} />
               </div>
             </div>
-          </div>
+
+            {/* ---------- slider multiplier ---------- */}
+            <div className="-mt-2 px-2 py-1 flex items-center gap-3">
+              <div className="relative w-full max-w-[85%]">
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  step="0.1"
+                  value={multiplier}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    setMultiplier(v);
+                    setTooltipX(((v - 1) / 9) * 100);
+                  }}
+                  onMouseDown={() => setShowTooltip(true)}
+                  onMouseUp={() => setShowTooltip(false)}
+                  onTouchStart={() => setShowTooltip(true)}
+                  onTouchEnd={() => setShowTooltip(false)}
+                  className="w-full appearance-none bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full cursor-pointer"
+                />
+                {showTooltip && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute -top-7 -translate-x-1/2 px-2 py-1 bg-white text-black text-xs font-bold rounded pointer-events-none"
+                    style={{ left: `calc(${tooltipX}% - 8px)` }}
+                  >
+                    x{multiplier.toFixed(1)}
+                  </motion.div>
+                )}
+              </div>
+              <div className="px-3 py-1 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-bold shadow-md">
+                x{multiplier.toFixed(1)}
+              </div>
+            </div>
+          </motion.div>
         </div>
 
         <Footer />

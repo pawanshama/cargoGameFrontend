@@ -1,78 +1,82 @@
+/* ------------------------------------------------------------------
+   src/components/Game.tsx   –  instrumentation complète
+   ------------------------------------------------------------------ */
+
 import { useEffect } from "react";
 import Phaser from "phaser";
 import axios from "axios";
 import config from "../../game/GameConfig";
 
-const Game = ({
-  matchId,
-  surplusPoolId, // ← AJOUTÉ
-  isAlone,
-  onResolved,
-}: {
+type GameProps = {
   matchId: string;
-  surplusPoolId?: string; // ← AJOUTÉ
+  surplusPoolId?: string;
   isAlone: boolean;
   onResolved: (result: any) => void;
-}) => {
+};
 
+const BACKEND = "https://corgi-in-space-backend-production.up.railway.app";
+
+const Game = ({ matchId, surplusPoolId, isAlone, onResolved }: GameProps) => {
   useEffect(() => {
-    console.log("🧠 Game.tsx mounted", { matchId, surplusPoolId, isAlone });
+    /* ─────────────── Mount ─────────────── */
+    console.log("🧠 [Game] mounted", { matchId, surplusPoolId, isAlone });
+
     let destroyed = false;
     let gameInstance: Phaser.Game;
 
-    // 🧠 Injecter d'abord onGameEnd dans le window
+    /* ========== onGameEnd (exposé au jeu) ========== */
     (window as any).onGameEnd = async (score: number) => {
       if (destroyed) {
-        console.warn("⛔️ onGameEnd appelé après unmount !");
+        console.warn("⛔️ [Game] onGameEnd after unmount – ignore");
         return;
       }
-      console.log("🏁 onGameEnd déclenché avec score :", score);
+
+      console.log("🏁 [Game] onGameEnd", { score });
 
       try {
         const initData = window.Telegram?.WebApp?.initData;
-        if (!initData) throw new Error("❌ initData Telegram introuvable");
+        if (!initData) throw new Error("initData Telegram introuvable");
 
         const headers = {
           Authorization: `tma ${initData}`,
           "Content-Type": "application/json",
         };
 
-// 1️⃣ /match/finish principal
+        /* 1️⃣ /match/finish ------------------------------------------------ */
+        console.log("🛰️ [Game] POST /match/finish →", { matchId, score });
+        const finishRes = await axios.post(
+          `${BACKEND}/api/match/finish`,
+          { matchId, score },
+          { headers },
+        );
+        console.log("✅ [Game] /match/finish OK", finishRes.data);
 
-console.log("📤 Appel à /match/finish", { matchId, score });
+        if (finishRes.data.status !== "finished") {
+          console.warn("⚠️ /match/finish status!=finished → abort");
+          return;
+        }
 
-const finishRes = await axios.post(
-  "https://corgi-in-space-backend-production.up.railway.app/api/match/finish",
-  { matchId, score },
-  { headers }
-);
+        /* 2️⃣ /pool/finish (si surplus) ----------------------------------- */
+        if (surplusPoolId) {
+          console.log("🛰️ [Game] POST /pool/finish →", {
+            poolId: surplusPoolId,
+            score,
+          });
+          try {
+            const poolRes = await axios.post(
+              `${BACKEND}/api/pool/finish`,
+              { poolId: surplusPoolId, score },
+              { headers },
+            );
+            console.log("✅ [Game] /pool/finish OK", poolRes.data);
+          } catch (err) {
+            console.error("❌ [Game] /pool/finish ERROR", err);
+          }
+        }
 
-if (finishRes.data.status !== "finished") {
-  console.warn("⚠️ Score non enregistré :", finishRes.data);
-  return;
-}
-console.log("✅ Réponse de /match/finish :", finishRes.data);
-
-// 2️⃣ Mise à jour de la surplusPool si elle existe
-if (surplusPoolId) {
-  console.log("➕ Envoi du score pour surplusPool :", surplusPoolId);
-  console.log("📤 Appel à /pool/finish", { poolId: surplusPoolId, score });
-  await axios.post(
-    "https://corgi-in-space-backend-production.up.railway.app/api/pool/finish",
-    { poolId: surplusPoolId, score },
-    { headers }
-  );
-  console.log("✅ Réponse de /pool/finish reçue (aucune erreur levée)");
-
-}
-
-
-        
-
-
-        // 3️⃣ Mode solo = draw
+        /* 3️⃣ Mode solo : pas de /match/resolve --------------------------- */
         if (isAlone) {
-          console.log("🎮 Mode solo détecté, envoi du résultat local");
+          console.log("🎮 [Game] Solo mode → resolve locally (Draw)");
           onResolved({
             result: "Draw",
             score,
@@ -82,57 +86,54 @@ if (surplusPoolId) {
           return;
         }
 
-        // 4️⃣ /match/resolve
+        /* 4️⃣ /match/resolve ---------------------------------------------- */
+        console.log("🛰️ [Game] POST /match/resolve →", { matchId });
         const resolveRes = await axios.post(
-          "https://corgi-in-space-backend-production.up.railway.app/api/match/resolve",
+          `${BACKEND}/api/match/resolve`,
           { matchId },
-          { headers }
+          { headers },
         );
-        console.log("📤 Appel à /match/resolve", { matchId });
+        console.log("✅ [Game] /match/resolve response", resolveRes.data);
 
         if (resolveRes.data.status === "resolved") {
-          console.log("✅ Réponse reçue de /match/resolve :", resolveRes.data);
-          onResolved({
-            ...resolveRes.data,
-            score,
-          });
+          onResolved({ ...resolveRes.data, score });
         } else {
-          console.warn("⚠️ Résolution échouée, fallback activé :", resolveRes.data);
-  console.log("🔥 resolve fallback exécuté");
-          
-
+          console.warn("⚠️ /match/resolve status!=resolved → fallback");
           onResolved({
             result: "Draw",
             score,
             opponentScore: resolveRes.data?.opponentScore ?? 0,
             reward: resolveRes.data?.reward ?? 0,
           });
-           
         }
       } catch (err) {
-        console.error("❌ Erreur onGameEnd :", err);
+        console.error("❌ [Game] onGameEnd global ERROR", err);
       }
     };
 
-    // ✅ Instanciation du jeu
+    /* ========== Instanciation Phaser ========== */
+    console.log("🎮 [Game] Phaser instanciation");
     gameInstance = new Phaser.Game(config);
 
-    // 🎯 Resize handler
+    /* ========== Resize handler ========== */
     const resize = () => {
+      console.log("📐 [Game] resize", {
+        w: window.innerWidth,
+        h: window.innerHeight,
+      });
       gameInstance.scale.resize(window.innerWidth, window.innerHeight);
     };
     window.addEventListener("resize", resize);
 
-    // 🔚 Cleanup
+    /* ========== Cleanup ========== */
     return () => {
       destroyed = true;
       window.removeEventListener("resize", resize);
       gameInstance.destroy(true);
       delete (window as any).onGameEnd;
-      console.log("🏁 Game destroyed and onGameEnd cleaned");
+      console.log("🏁 [Game] unmounted & cleaned");
     };
-}, [matchId, surplusPoolId, isAlone, onResolved]); // ✅
-
+  }, [matchId, surplusPoolId, isAlone, onResolved]); // deps
 
   return (
     <div

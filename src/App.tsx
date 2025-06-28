@@ -1,13 +1,17 @@
-import { useRef, useEffect, useState } from "react";
+/* src/App.tsx  — version avec traçage complet */
+
+import { useEffect, useRef, useState } from "react";
 import {
   BrowserRouter as Router,
-  Route,
   Routes,
+  Route,
   useNavigate,
   useLocation,
 } from "react-router-dom";
+import axios from "axios";
 import "./App.css";
 
+/* ---------- Pages ---------- */
 import Airdrop from "./Component/pages/Airdrop";
 import Wallet from "./Component/pages/Wallet";
 import OnBoarding from "./Component/pages/OnBoarding";
@@ -19,68 +23,120 @@ import CongratulationsWithScore from "./Component/pages/CongratulationsWithScore
 import Terms from "./Component/pages/Terms";
 import Privacy from "./Component/pages/Privacy";
 
-import axios from "axios";
+/* ---------- Context / hooks ---------- */
 import { TonConnectUIProvider } from "@tonconnect/ui-react";
 import { UserProvider, useUser } from "./Component/context/UserContext";
-import useBackgroundMusic from "./hooks/useBackgroundMusic"; 
-//import useFullscreenOnStart from "./hooks/useFullscreenOnStart";
+import useBackgroundMusic from "./hooks/useBackgroundMusic";
 
+const API_BASE =
+  import.meta.env.VITE_BACKEND_URL ||
+  "https://corgi-in-space-backend-production.up.railway.app";
 
+/* ========================================================================= */
+/*                               SUB-ROUTES                                  */
+/* ========================================================================= */
 
-// ✅ Gère les routes et l'envoi de l'utilisateur au backend
 function AppRoutes() {
   const navigate = useNavigate();
   const location = useLocation();
-  const hasRedirected = useRef(false);
-  const [userReady, setUserReady] = useState(false);
   const { setUser } = useUser();
 
+  const hasRedirected = useRef(false);
+  const didAuth = useRef(false);
+  const [userReady, setUserReady] = useState(false);
+
+  /* ───────────── 1. Collecte code d’invitation ───────────── */
   useEffect(() => {
-    const tg = window.Telegram?.WebApp;
+    /* a. dans l’URL */
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteCodeFromURL = urlParams.get("invite");
 
-    if (!tg) {
-      console.warn("❌ Telegram WebApp is not available");
-      return;
-    }
+    /* b. dans le start_param Telegram */
+    const rawStart = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+    const inviteCodeFromStart =
+      rawStart?.startsWith("invite=") ? rawStart.slice(7) : null;
 
-    tg.ready();
-    console.log("✅ Telegram WebApp ready");
+    const inviteCode = inviteCodeFromURL || inviteCodeFromStart;
 
-    const initData = tg.initData;
-    if (!initData) {
-      console.warn("❌ initData manquant");
-      return;
-    }
+    console.log("🔎 inviteCode URL =", inviteCodeFromURL);
+    console.log("🔎 inviteCode start_param =", inviteCodeFromStart);
+
+    if (!inviteCode) return;
 
     axios
-      .post("https://corgi-in-space-backend-production.up.railway.app/api/auth/telegram", null, {
-        headers: {
-          Authorization: `tma ${initData}`,
-        },
-      })
+      .get<{ inviterId: string }>(`${API_BASE}/api/invite/${inviteCode}`)
       .then((res) => {
-        console.log("✅ Utilisateur connecté :", res.data.userData);
-        setUser(res.data.userData);
-        console.log("👤 Données utilisateur stockées :", res.data.userData);
-        setUserReady(true);
-        console.log("🔓 userReady set to TRUE");
+        if (res.data?.inviterId) {
+          localStorage.setItem("inviterId", res.data.inviterId);
+          console.log("✅ inviterId stocké :", res.data.inviterId);
+        } else {
+          console.warn("⚠️ inviteCode reconnu, mais pas de parrain ?!");
+        }
       })
       .catch((err) => {
-        console.error("❌ Erreur auth Telegram :", err.response?.data || err.message);
+        console.warn("❌ Code d’invitation invalide :", err?.response?.data || err);
       });
   }, []);
 
+  /* ───────────── 2. Auth Telegram (une fois) ───────────── */
   useEffect(() => {
-    const shouldRedirect = location.pathname === "/" || location.pathname === "/onboarding";
-    console.log("🔁 Redirection check: userReady =", userReady, "| pathname =", location.pathname);
+    if (didAuth.current) return;
 
-    if (!hasRedirected.current && userReady && shouldRedirect) {
+    const tg = window.Telegram?.WebApp;
+    if (!tg) return console.warn("❌ Telegram WebApp not available");
+
+    tg.ready();
+
+    const initData = tg.initData;
+    if (!initData) return console.warn("❌ initData manquant");
+
+    didAuth.current = true;
+
+    const inviterId = localStorage.getItem("inviterId") || null;
+    const rawStart = tg.initDataUnsafe?.start_param;
+    const inviteCode =
+      rawStart?.startsWith("invite=") ? rawStart.slice(7) : null;
+
+    console.log("🚀 POST /auth/telegram body :", { inviterId, inviteCode });
+
+    axios
+      .post(
+        `${API_BASE}/api/auth/telegram`,
+        { inviterId, inviteCode },
+        { headers: { Authorization: `tma ${initData}` } },
+      )
+      .then((res) => {
+        console.log("✅ Utilisateur connecté :", res.data.userData);
+        setUser(res.data.userData);
+        setUserReady(true);
+        localStorage.removeItem("inviterId");
+      })
+      .catch((err) => {
+        console.error("❌ Erreur auth Telegram :", err?.response?.data || err);
+      });
+  }, [setUser]);
+
+  /* ───────────── 3. Redirection automatique ───────────── */
+  useEffect(() => {
+    const onBoard = ["/", "/onboarding"];
+    if (!hasRedirected.current && userReady && onBoard.includes(location.pathname.toLowerCase())) {
       hasRedirected.current = true;
-      console.log("➡️ Redirection vers /bet");
-      navigate("/bet");
+      navigate("/bet", { replace: true });
     }
-  }, [userReady, location, navigate]);
+  }, [userReady, location.pathname, navigate]);
 
+  /* ───────────── 4. Iframe messages ───────────── */
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.action === "goToMainScreen" && location.pathname !== "/bet") {
+        navigate("/bet");
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [navigate, location.pathname]);
+
+  /* ───────────── Routes ───────────── */
   return (
     <Routes>
       <Route path="/" element={<OnBoarding />} />
@@ -97,17 +153,17 @@ function AppRoutes() {
   );
 }
 
-// ✅ App principale avec gestion musique
+/* ========================================================================= */
+/*                                   ROOT                                    */
+/* ========================================================================= */
+
 function App() {
-useBackgroundMusic("/assets/sounds/21Musichome.mp3", 0.1); // 👈 ici tu ajustes le volume
-//useFullscreenOnStart();
+  useBackgroundMusic("/assets/sounds/21Musichome.mp3", 0.1);
 
   return (
     <TonConnectUIProvider
       manifestUrl="https://corgi-in-space-front-end.vercel.app/tonconnect-manifest-v2.json"
-      actionsConfiguration={{
-        twaReturnUrl: "https://t.me/corgiinspacebot",
-      }}
+      actionsConfiguration={{ twaReturnUrl: "https://t.me/CorginSpaceBot" }}
     >
       <UserProvider>
         <div className="flex font-lato place-content-center relative">

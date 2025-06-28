@@ -1,130 +1,95 @@
-import React, { useEffect, useState } from "react";
+/* src/Component/pages/FreeBetMissions/Mission1.tsx */
+
+import { useEffect, useState } from "react";
 import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
-import Mission1AfterDeposit from "./Mission1AfterDeposit";
-import { io as socketIOClient } from "socket.io-client";
+import Mission1AfterDeposit  from "./Mission1AfterDeposit";
+import { io, Socket }        from "socket.io-client";
 
 interface Mission1Props {
   onBack: () => void;
   onCollect: () => void;
-  hasDeposited: boolean;
+  hasDeposited: boolean | undefined;   // undefined = inconnu
   depositAmount?: number;
 }
 
 const Mission1: React.FC<Mission1Props> = ({
   onBack,
   onCollect,
-  hasDeposited: initialHasDeposited,
-  depositAmount: initialDepositAmount,
+  hasDeposited: initDep,
+  depositAmount: initAmt,
 }) => {
-  const [hasDeposited, setHasDeposited] = useState(initialHasDeposited);
-  const [depositAmount, setDepositAmount] = useState<number | null>(
-    initialDepositAmount ?? null
-  );
-  const [loading, setLoading] = useState(true);
+  /* -------- état -------- */
+  const [hasDeposited,  setDep]   = useState<boolean | undefined>(initDep);
+  const [depositAmount, setAmt]   = useState<number | null>(initAmt ?? null);
+  const [loading,       setLoad]  = useState(initDep === undefined);
 
+  /* -------- effet -------- */
   useEffect(() => {
-    const initData = window.Telegram?.WebApp?.initData;
-    const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+    const tg   = window.Telegram?.WebApp;
+    const init = tg?.initData;
+    const uid  = (tg?.initDataUnsafe as any)?.user?.id as number | undefined;
 
-    console.log("📦 initData :", initData);
-    console.log("👤 telegramId :", telegramId);
+    /* socket déclaré ici pour être visible dans le cleanup */
+    let socket: Socket | null = null;
 
-    let socket: ReturnType<typeof socketIOClient> | null = null;
-
-    // 🚨 Si pas d'initData → on annule
-    if (!initData || !telegramId) {
-      console.error("❌ initData ou telegramId manquant. Annulation de l'init.");
-      setLoading(false);
-      return;
+    /* si infos manquantes, on stoppe tout */
+    if (!init || !uid) {
+      setLoad(false);
+      return () => {};                 // cleanup “vide”
     }
 
-    // ✅ Fonction pour fetch le statut du dépôt
-    const fetchDeposit = async () => {
-  console.log("📡 Envoi requête /deposit-status");
-
-  try {
-    const res = await fetch(
-      "https://corgi-in-space-backend-production.up.railway.app/api/user/deposit-status",
-      {
-        headers: {
-          Authorization: `tma ${initData}`,
-        },
+    /* ---- vérifie dépôt ---- */
+    const checkDeposit = async () => {
+      try {
+        const r = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/user/deposit-status`,
+          { headers: { Authorization: `tma ${init}` } },
+        );
+        if (!r.ok) return false;
+        const j = await r.json();
+        if (j.hasDeposited && typeof j.depositAmount === "number") {
+          setDep(true);
+          setAmt(j.depositAmount);
+        } else {
+          setDep(false);
+        }
+        setLoad(false);
+        return true;
+      } catch {
+        setLoad(false);
+        return false;
       }
-    );
+    };
 
-    console.log("📨 Status HTTP:", res.status);
+    /* appel initial uniquement si parent ne l’a pas encore */
+    if (initDep === undefined) void checkDeposit();
+    else setLoad(false);
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("❌ Erreur HTTP deposit-status :", errorText);
-      setLoading(false); // ✅ obligatoire
-      return false;
-    }
-
-    const data = await res.json();
-    console.log("🎯 Résultat deposit-status :", data);
-
-    if (data?.hasDeposited && typeof data.depositAmount === "number") {
-      setHasDeposited(true);
-      setDepositAmount(data.depositAmount);
-      setLoading(false);
-      return true;
-    }
-  } catch (err) {
-    console.error("❌ Exception fetchDeposit:", err);
-    setLoading(false); // ✅ obligatoire
-  }
-
-  setLoading(false); // ✅ si data non conforme
-  return false;
-};
-
-
-    // ⏱️ 1. Fetch immédiat puis retries
-    fetchDeposit().then((success) => {
-      if (!success) {
-        let tries = 0;
-        const intervalId = setInterval(async () => {
-          const ok = await fetchDeposit();
-          tries++;
-          if (ok || tries >= 6) clearInterval(intervalId);
-        }, 5000);
-      }
-    });
-
-    // 🔌 2. Connexion WebSocket
-    socket = socketIOClient("https://corgi-in-space-backend-production.up.railway.app", {
-      query: { telegramId: telegramId.toString() },
+    /* ---- WebSocket “first-deposit” ---- */
+    socket = io(import.meta.env.VITE_BACKEND_URL, {
+      query: { telegramId: String(uid) },
       transports: ["websocket"],
     });
 
-    socket.on("connect", () => {
-      console.log("🔌 WebSocket connecté");
+    socket.on("first-deposit", (p: { amount: number }) => {
+      setDep(true);
+      setAmt(p.amount);
+      setLoad(false);
     });
 
-    socket.on("first-deposit", (payload) => {
-      console.log("🎁 Event WebSocket first-deposit :", payload);
-      setHasDeposited(true);
-      setDepositAmount(payload.amount / 100); // Convertir si stocké en cents
-      setLoading(false);
-    });
-
-    socket.on("disconnect", () => {
-      console.log("📴 WebSocket déconnecté");
-    });
-
-    // 🧼 3. Cleanup
+    /* ---- cleanup ---- */
     return () => {
-      if (socket) {
-        socket.disconnect();
-        console.log("🧼 Socket proprement fermé");
-      }
+      if (socket) socket.disconnect();
     };
-}, [window.Telegram?.WebApp?.initData, window.Telegram?.WebApp?.initDataUnsafe?.user?.id]);
+  }, [initDep]);
 
-
+  /* -------- rendu -------- */
   if (loading) {
-    return <div className="text-white text-center mt-10">Loading...</div>;
+    return (
+      <div className="absolute inset-0 flex items-center justify-center bg-[#160028]/90 z-50">
+        <p className="text-white animate-pulse">Loading…</p>
+      </div>
+    );
   }
 
   return hasDeposited && depositAmount !== null ? (

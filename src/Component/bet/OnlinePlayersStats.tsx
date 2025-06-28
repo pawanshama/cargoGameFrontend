@@ -40,25 +40,25 @@ const OnlinePlayersStats: React.FC<OnlinePlayersStatsProps> = ({
       </div>
 
       {/* Lucky Bet */}
-      <div className="relative">
-        <button
-          type="button"
-          className="relative bg-buttonSecondary rounded-lg shadow-[0px_0px_14px_0px_#CAE010] py-4 px-3 w-full buttonFont text-center text-white transition-transform duration-100 active:scale-95"
-          onClick={() => {
-            playLuckyBetSound();
-            // Tu peux ajouter ici une logique Lucky Bet supplémentaire
-          }}
-        >
-          {/* Image intégrée dans le bouton pour réagir au clic */}
-          <img
-            src={FreeBetIconActive}
-            alt="gift-icon"
-            loading="lazy"
-            className="absolute -top-4 -left-3 -rotate-45 drop-shadow-[0px_4px_8px_0px_rgba(0,0,0,0.55)]"
-          />
-          Lucky bet
-        </button>
-      </div>
+<div className="relative">
+  <button
+    type="button"
+    className="relative animate-lucky-shake bg-buttonSecondary rounded-lg shadow-[0px_0px_14px_0px_#CAE010] py-4 px-3 w-full buttonFont text-center text-white transition-transform duration-100 active:scale-95"
+    onClick={() => {
+      playLuckyBetSound();
+      // Tu peux ajouter ici une logique Lucky Bet supplémentaire
+    }}
+  >
+    {/* Image intégrée dans le bouton pour réagir au clic */}
+    <img
+      src={FreeBetIconActive}
+      alt="gift-icon"
+      loading="lazy"
+      className="absolute -top-4 -left-3 -rotate-45 drop-shadow-[0px_4px_8px_0px_rgba(0,0,0,0.55)]"
+    />
+    Lucky bet
+  </button>
+</div>
     </div>
   );
 };

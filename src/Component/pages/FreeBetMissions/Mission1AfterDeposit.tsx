@@ -1,11 +1,18 @@
 import React from "react";
 import Button from "../../common/Button";
+import { formatFreeBet } from "../../../utils/format-freebet";
 
 interface Mission1AfterDepositProps {
   onBack: () => void;
   onCollect: () => void;
   depositAmount: number; // 💰 montant du dépôt passé en prop
 }
+
+
+  const playCollectSound = () => {
+    const audio = new Audio("/assets/sounds/10.Moneyadded.mp3");
+    audio.play().catch((err) => console.error("❌ Audio error:", err));
+  };
 
 const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
   onBack,
@@ -35,7 +42,8 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
                 className="w-[30px] h-[30px] object-contain"
               />
               <p className="text-[#00FFB2] text-[16px] sm:text-[18px] font-bold font-designer whitespace-nowrap text-center">
-                COLLECT ${depositAmount.toFixed(2)} <span className="text-white">Free Bets</span>
+                COLLECT {(depositAmount / 100).toFixed(2)} <span className="text-white">Free Bets</span>
+
               </p>
             </div>
 
@@ -64,14 +72,24 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex flex-col items-center leading-tight text-center w-[20%]">
                   <span className="text-[11px] text-white mb-[2px]">Bet</span>
-                  <span className="text-[14px] font-bold">${depositAmount.toFixed(0)}</span>
-                  <span className="text-[#00FFB2] mt-[4px] text-[11px]">Get ${depositAmount.toFixed(0)} Free Bet</span>
+                  <span className="text-[14px] font-bold">${formatFreeBet(depositAmount / 500)}</span>
+                  <span className="text-[#00FFB2] mt-[4px] text-[11px]">Get {formatFreeBet(depositAmount / 500)} Free Bet</span>
+
+
                 </div>
               ))}
             </div>
 
             <div className="mt-4">
-              <Button label="Collect" type="button" handleButtonClick={onCollect} />
+              <Button
+  label="Collect"
+  type="button"
+  handleButtonClick={() => {
+    playCollectSound(); // 👈 joue le son
+    onCollect();        // 👈 continue l’action
+  }}
+/>
+
             </div>
           </div>
         </div>

@@ -1,14 +1,23 @@
 import React, { createContext, useContext, useState } from "react";
 
+interface ReferralMission {
+  inviteCode: string;
+  invitedCount: number;
+  yourCashback: number;
+  friendsCashback: number;
+  totalCashback: number;
+}
+
 interface User {
-  id: string; // l'ID de ta base de données
+  id: string;
   telegram_id: number;
   username?: string;
   firstName?: string;
   lastName?: string;
   email?: string;
-  // ajoute ici d'autres champs si nécessaires
+  referralMission?: ReferralMission; // ✅ camelCase, comme dans le backend
 }
+
 
 interface UserContextType {
   user: User | null;
