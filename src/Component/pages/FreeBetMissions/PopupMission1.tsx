@@ -5,36 +5,35 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../common/Button";
 
-/*────────── PROPS ──────────*/
+/*───────── PROPS ─────────*/
 interface PopupMission1Props {
   onClose      : () => void;
-  rewardAmount?: number;   // ex. 20
+  rewardAmount?: number; // ex : 20
 }
 
-/*────────── COMPOSANT ─────*/
+/*───────── COMPOSANT ─────*/
 const PopupMission1: React.FC<PopupMission1Props> = ({
   onClose,
   rewardAmount = 20,
 }) => {
   const navigate = useNavigate();
 
-  /* 🔊 SFX */
+  /* 🔊 clic bouton */
   const playClickSound = () => {
     const audio = new Audio("/sounds/click.mp3");
     audio.play().catch(() => {});
   };
 
-  /*────────── RENDER ──────*/
+  /*───────── RENDER ───────*/
   return (
     <div className="fixed inset-0 z-50 bg-[#160028]/90 flex items-center justify-center">
-      {/* 💰 ANIMATION DES PIÈCES (identique à PopupMission2) */}
+      {/* 💰 ANIMATION DES PIÈCES */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        {[...Array(30)].map((_, index) => {
+        {[...Array(20)].map((_, index) => {
           const size     = 20 + Math.random() * 20;
           const left     = Math.random() * 100;
           const delay    = Math.random() * 1.5;
           const duration = 2 + Math.random() * 1.5;
-
           return (
             <img
               key={`coin-${index}`}
@@ -54,7 +53,7 @@ const PopupMission1: React.FC<PopupMission1Props> = ({
         })}
       </div>
 
-      {/* 🎉 POPUP CONTENU */}
+      {/* 🎉 POP-UP CONTENU */}
       <div className="bg-[#2b1048] p-6 rounded-2xl border border-[#9752b9] text-center w-[90%] max-w-sm relative z-10 shadow-2xl animate-pulse-zoom">
         <img
           src="/assets/Gifticonfreebet.png"
@@ -88,5 +87,5 @@ const PopupMission1: React.FC<PopupMission1Props> = ({
   );
 };
 
-/* ⚙️  Empêche les re-rendus si les props n’ont pas changé */
+/* Empêche les re-rendus si les props ne changent pas */
 export default React.memo(PopupMission1);
