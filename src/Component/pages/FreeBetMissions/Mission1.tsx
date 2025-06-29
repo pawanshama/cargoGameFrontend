@@ -56,21 +56,24 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
     } catch {/* ignore */ }
   }, [token, apiURL, depositCents]);
 
-  /* POST /mission1/collect */
-  const handleCollect = async () => {
-    if (!token) {
-      console.warn("⛔️ Pas de token Telegram – requête /mission1/collect annulée");
-      return;
-    }
-    try {
-      await fetch(
-        `${apiURL}/api/mission1/collect`,
-        { method: "POST", headers: { Authorization: `tma ${token}` } },
-      );
-      await fetchMissionStatus();
-      onCollect?.();
-    } catch (err) { console.error("❌ collect :", err); }
-  };
+  /* ====================================================================== */
+/*  handleCollect : ouverture popup immédiate, requête en arrière-plan    */
+/* ====================================================================== */
+const handleCollect = () => {
+  if (!token) return;                  // sécurité
+
+  /* 1️⃣  Pop-up instantané (UX fluide) */
+  onCollect?.();                       // ← ouvre PopupMission1 tout de suite
+
+  /* 2️⃣  API en tâche de fond (sans await) */
+  fetch(`${apiURL}/api/mission1/collect`, {
+    method : "POST",
+    headers: { Authorization: `tma ${token}` },
+  })
+    .then(() => fetchMissionStatus())  // on met l’état à jour quand ça revient
+    .catch((err) => console.error("❌ /mission1/collect :", err));
+};
+
 
   /* effet principal */
   useEffect(() => {
