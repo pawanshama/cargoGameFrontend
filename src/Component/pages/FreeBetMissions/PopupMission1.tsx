@@ -1,17 +1,17 @@
 /* ------------------------------------------------------------------
    src/Component/pages/FreeBetMissions/PopupMission1.tsx
    ------------------------------------------------------------------ */
-import React, { useMemo } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../common/Button";
 
-/*───────── PROPS ─────────*/
+/*────────── PROPS ──────────*/
 interface PopupMission1Props {
   onClose      : () => void;
   rewardAmount?: number;   // ex. 20
 }
 
-/*───────── COMPOSANT ─────*/
+/*────────── COMPOSANT ─────*/
 const PopupMission1: React.FC<PopupMission1Props> = ({
   onClose,
   rewardAmount = 20,
@@ -24,46 +24,37 @@ const PopupMission1: React.FC<PopupMission1Props> = ({
     audio.play().catch(() => {});
   };
 
-  /* 🎞️ Pièces : générées une seule fois grâce à useMemo */
-  const fallingCoins = useMemo(
-    () =>
-      [...Array(30)].map((_, i) => {
-        const size     = 20 + Math.random() * 20;
-        const left     = Math.random() * 100;
-        const delay    = Math.random() * 1.5;
-        const duration = 2 + Math.random() * 1.5;
-
-        return (
-          <img
-            key={i}
-            src="/assets/coin.png"
-            alt="coin"
-            className="animate-fall"
-            style={{
-              top: "-50px",
-              left: `${left}%`,
-              width: `${size}px`,
-              height: `${size}px`,
-              animationDelay: `${delay}s`,
-              animationDuration: `${duration}s`,
-              position: "absolute",
-              willChange: "transform",
-            }}
-          />
-        );
-      }),
-    [],
-  );
-
-  /*───────── RENDER ───────*/
+  /*────────── RENDER ──────*/
   return (
     <div className="fixed inset-0 z-50 bg-[#160028]/90 flex items-center justify-center">
-      {/* coins */}
+      {/* 💰 ANIMATION DES PIÈCES (identique à PopupMission2) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        {fallingCoins}
+        {[...Array(30)].map((_, index) => {
+          const size     = 20 + Math.random() * 20;
+          const left     = Math.random() * 100;
+          const delay    = Math.random() * 1.5;
+          const duration = 2 + Math.random() * 1.5;
+
+          return (
+            <img
+              key={`coin-${index}`}
+              src="/assets/coin.png"
+              alt="coin"
+              className="animate-fall"
+              style={{
+                top: "-50px",
+                left: `${left}%`,
+                width: `${size}px`,
+                height: `${size}px`,
+                animationDelay: `${delay}s`,
+                animationDuration: `${duration}s`,
+              }}
+            />
+          );
+        })}
       </div>
 
-      {/* popup */}
+      {/* 🎉 POPUP CONTENU */}
       <div className="bg-[#2b1048] p-6 rounded-2xl border border-[#9752b9] text-center w-[90%] max-w-sm relative z-10 shadow-2xl animate-pulse-zoom">
         <img
           src="/assets/Gifticonfreebet.png"
@@ -97,5 +88,5 @@ const PopupMission1: React.FC<PopupMission1Props> = ({
   );
 };
 
-/* ⚙️  Empêche un re-render inutile si les props ne changent pas */
+/* ⚙️  Empêche les re-rendus si les props n’ont pas changé */
 export default React.memo(PopupMission1);
