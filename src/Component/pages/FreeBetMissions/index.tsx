@@ -15,6 +15,7 @@ import Mission2      from "./Mission2";
 import PopupMission1 from "./PopupMission1";
 import PopupMission2 from "./PopupMission2";
 
+
 /* -------------------------------------------------------------------------- */
 /*                         MISSION CONFIGURATION                              */
 /* -------------------------------------------------------------------------- */
@@ -46,6 +47,13 @@ const FreeBetMissions: React.FC = () => {
 
   const navigate = useNavigate();
   const initData = window.Telegram?.WebApp.initData;
+
+  /* stable callback → ne change plus d’adresse  */
+const closePopup1 = useCallback(() => {
+  setActivePopup(null);
+  navigate("/bet");
+}, [navigate]);
+
 
   /* ------------------------------ fetchers ------------------------------ */
   const fetchDepositStatus = useCallback(async () => {
@@ -146,6 +154,9 @@ const FreeBetMissions: React.FC = () => {
           <Mission1
             onBack={() => setActiveMission(null)}
             onCollect={() => setActivePopup(1)}
+            hasDeposited={_hasDeposited}
+            depositCents={_depositAmount}
+
           />
         )}
 
@@ -162,14 +173,8 @@ const FreeBetMissions: React.FC = () => {
       </AnimatePresence>
 
       {/* pop-ups */}
-      {activePopup === 1 && (
-        <PopupMission1
-          onClose={() => {
-            setActivePopup(null);
-            navigate("/bet");
-          }}
-        />
-      )}
+      {activePopup === 1 && <PopupMission1 onClose={closePopup1} />}
+
       {activePopup === 2 && (
         <PopupMission2
           onClose={() => {

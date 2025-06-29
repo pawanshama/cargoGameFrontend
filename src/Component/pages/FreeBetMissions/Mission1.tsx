@@ -17,108 +17,113 @@ interface Mission1StatusPayload {
 
 /*──────── props ────────*/
 interface Mission1Props {
-  onBack    : () => void;
-  onCollect?: () => void;          // ouvre le popup succès
+  onBack        : () => void;
+  onCollect?    : () => void;     // ouvre le pop-up succès
+  hasDeposited? : boolean;        // pré-chargé par la page parente
+  depositCents? : number | null;  // pré-chargé par la page parente
 }
 
 /*───────────────────────────────────────────────────────────*/
-const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
-  /* état */
-  const [hasDeposited, setDep]  = useState<boolean | undefined>();
-  const [depositCents, setAmt]  = useState<number | null>(null);
-  const [unlocked,     setUnl]  = useState(0);
-  const [claimed,      setClm]  = useState(0);
-  const [loading,      setLoad] = useState(true);
+const Mission1: React.FC<Mission1Props> = (props) => {
+  const { onBack, onCollect, hasDeposited, depositCents } = props;
+
+  /* ───────── état local (initialisé avec les props) ───────── */
+  const [depDone, setDepDone]         = useState<boolean | undefined>(hasDeposited);
+  const [depositAmt, setDepositAmt]   = useState<number | null>(depositCents ?? null);
+  const [unlocked,   setUnlocked]     = useState(0);
+  const [claimed,    setClaimed]      = useState(0);
+  const [loading,    setLoading]      = useState(hasDeposited === undefined);
 
   /* helpers */
   const tg     = window.Telegram?.WebApp;
-  const token  = tg?.initData || "";               // ← jamais “undefined”
+  const token  = tg?.initData || "";
   const apiURL = import.meta.env.VITE_BACKEND_URL;
 
-  /* GET /mission1/status */
+  /* ───────── GET /mission1/status ───────── */
   const fetchMissionStatus = useCallback(async () => {
-    if (!token) {
-      console.warn("⛔️ Pas de token Telegram – requête /mission1/status annulée");
-      return;
-    }
+    if (!token) return;
 
     try {
       const r = await fetch(
         `${apiURL}/api/mission1/status`,
-        { headers: { Authorization: `tma ${token}` } },   // header si token
+        { headers: { Authorization: `tma ${token}` } },
       );
       if (!r.ok) return;
       const { data } = await r.json();
       const d = data as Mission1StatusPayload;
-      setUnl(d.unlockedParts);
-      setClm(d.claimedParts);
-      if (d.depositCents && depositCents === null) setAmt(d.depositCents);
+
+      setUnlocked(d.unlockedParts);
+      setClaimed(d.claimedParts);
+      if (d.depositCents && depositAmt === null) setDepositAmt(d.depositCents);
     } catch {/* ignore */ }
-  }, [token, apiURL, depositCents]);
+  }, [token, apiURL, depositAmt]);
 
-  /* ====================================================================== */
-/*  handleCollect : ouverture popup immédiate, requête en arrière-plan    */
-/* ====================================================================== */
-const handleCollect = () => {
-  if (!token) return;                  // sécurité
+  /* ───────── POST /mission1/collect (optimistic) ───────── */
+  const handleCollect = () => {
+    if (!token) return;
 
-  /* 1️⃣  Pop-up instantané (UX fluide) */
-  onCollect?.();                       // ← ouvre PopupMission1 tout de suite
+    /* 1️⃣  pop-up instantané */
+    onCollect?.();
 
-  /* 2️⃣  API en tâche de fond (sans await) */
-  fetch(`${apiURL}/api/mission1/collect`, {
-    method : "POST",
-    headers: { Authorization: `tma ${token}` },
-  })
-    .then(() => fetchMissionStatus())  // on met l’état à jour quand ça revient
-    .catch((err) => console.error("❌ /mission1/collect :", err));
-};
+    /* 2️⃣  requête en tâche de fond */
+    fetch(`${apiURL}/api/mission1/collect`, {
+      method : "POST",
+      headers: { Authorization: `tma ${token}` },
+    })
+      .then(() => fetchMissionStatus())
+      .catch((err) => console.error("❌ /mission1/collect :", err));
+  };
 
-
-  /* effet principal */
+  /* ───────── effet principal ───────── */
   useEffect(() => {
     const uid = (tg?.initDataUnsafe as any)?.user?.id as number | undefined;
-    if (!token || !uid) { setLoad(false); return; }
+    if (!token || !uid) { setLoading(false); return; }
 
-    /* 1️⃣ dépôt déjà fait ? */
-    (async () => {
-      try {
-        const r = await fetch(
-          `${apiURL}/api/user/deposit-status`,
-          { headers: { Authorization: `tma ${token}` } },
-        );
-        if (r.ok) {
-          const j = await r.json();
-          if (j.hasDeposited && typeof j.depositAmount === "number") {
-            setDep(true);
-            setAmt(j.depositAmount);
-            await fetchMissionStatus();
-          } else {
-            setDep(false);
+    /* 1️⃣  dépôt déjà fait ? (si pas fourni par la page parente) */
+    if (depDone === undefined) {
+      (async () => {
+        try {
+          const r = await fetch(
+            `${apiURL}/api/user/deposit-status`,
+            { headers: { Authorization: `tma ${token}` } },
+          );
+          if (r.ok) {
+            const j = await r.json();
+            if (j.hasDeposited && typeof j.depositAmount === "number") {
+              setDepDone(true);
+              setDepositAmt(j.depositAmount);
+              await fetchMissionStatus();
+            } else {
+              setDepDone(false);
+            }
           }
+        } finally {
+          setLoading(false);
         }
-      } finally {
-        setLoad(false);
-      }
-    })();
+      })();
+    } else {
+      /* Les infos étaient déjà là → pas de spinner */
+      setLoading(false);
+      if (depDone) fetchMissionStatus();
+    }
 
-    /* 2️⃣ WebSocket pour détecter le premier dépôt */
+    /* 2️⃣  WebSocket pour détecter le premier dépôt */
     const socket: Socket = io(apiURL, {
       query: { telegramId: String(uid) },
       transports: ["websocket"],
     });
 
     socket.on("first-deposit", async (p: { amount: number }) => {
-      setDep(true);
-      setAmt(p.amount);
+      setDepDone(true);
+      setDepositAmt(p.amount);
       await fetchMissionStatus();
     });
 
-    /* cleanup → toujours void */
+    /* cleanup */
     return () => { socket.disconnect(); };
-  }, [token, apiURL, fetchMissionStatus]);
+  }, [token, apiURL, depDone, fetchMissionStatus]);
 
-  /* rendu */
+  /* ───────── rendu ───────── */
   if (loading) {
     return (
       <div className="absolute inset-0 flex items-center justify-center bg-[#160028]/90 z-50">
@@ -127,11 +132,11 @@ const handleCollect = () => {
     );
   }
 
-  return hasDeposited && depositCents !== null ? (
+  return depDone && depositAmt !== null ? (
     <Mission1AfterDeposit
       onBack={onBack}
       onCollect={handleCollect}
-      depositAmount={depositCents}
+      depositAmount={depositAmt}
       unlockedParts={unlocked}
       claimedParts={claimed}
     />
