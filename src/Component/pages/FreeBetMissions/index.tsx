@@ -15,7 +15,6 @@ import Mission2      from "./Mission2";
 import PopupMission1 from "./PopupMission1";
 import PopupMission2 from "./PopupMission2";
 
-
 /* -------------------------------------------------------------------------- */
 /*                         MISSION CONFIGURATION                              */
 /* -------------------------------------------------------------------------- */
@@ -34,11 +33,6 @@ const FreeBetMissions: React.FC = () => {
   const [activeMission, setActiveMission] = useState<number | null>(null);
   const [activePopup,   setActivePopup]   = useState<number | null>(null);
 
-  /* Ces deux états ne sont plus affichés, mais on les conserve si tu veux
-     ré-utiliser ensuite les infos du dépôt dans cette page.  */
-  const [_hasDeposited,  _setHasDeposited]  = useState<boolean | undefined>();
-  const [_depositAmount, _setDepositAmount] = useState<number | undefined>();
-
   /* “Invite friends” stats */
   const [invitedCount,    setInvited]   = useState(0);
   const [totalCashback,   setTotalCb]   = useState(0);
@@ -48,33 +42,9 @@ const FreeBetMissions: React.FC = () => {
   const navigate = useNavigate();
   const initData = window.Telegram?.WebApp.initData;
 
-  /* stable callback → ne change plus d’adresse  */
-const closePopup1 = useCallback(() => {
-  setActivePopup(null);
-  navigate("/bet");
-}, [navigate]);
-
-
   /* ------------------------------ fetchers ------------------------------ */
-  const fetchDepositStatus = useCallback(async () => {
-    if (!initData) return;
-
-    try {
-      const res = await fetch(`${API}/api/user/deposit-status`, {
-        headers: { Authorization: `tma ${initData}` },
-      });
-      const j = await res.json();
-      _setHasDeposited(j.hasDeposited);
-      _setDepositAmount(j.depositAmount);
-    } catch (err) {
-      console.error("❌ deposit-status :", err);
-      _setHasDeposited(false);
-    }
-  }, [initData]);
-
   const fetchInviteStats = useCallback(async () => {
     if (!initData) return;
-
     try {
       const res = await fetch(`${API}/api/user/invite-status`, {
         headers: { Authorization: `tma ${initData}` },
@@ -91,9 +61,14 @@ const closePopup1 = useCallback(() => {
 
   /* ----------------------------- lifecycle ------------------------------ */
   useEffect(() => {
-    fetchDepositStatus();
     fetchInviteStats();
-  }, [fetchDepositStatus, fetchInviteStats]);
+  }, [fetchInviteStats]);
+
+  /* --------------------------- callback stable --------------------------- */
+  const closePopup1 = useCallback(() => {
+    setActivePopup(null);
+    navigate("/bet");
+  }, [navigate]);
 
   /* ---------------------------------------------------------------------- */
   /*                                RENDER                                  */
@@ -154,9 +129,6 @@ const closePopup1 = useCallback(() => {
           <Mission1
             onBack={() => setActiveMission(null)}
             onCollect={() => setActivePopup(1)}
-            hasDeposited={_hasDeposited}
-            depositCents={_depositAmount}
-
           />
         )}
 

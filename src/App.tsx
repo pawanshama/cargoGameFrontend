@@ -27,6 +27,8 @@ import Privacy from "./Component/pages/Privacy";
 import { TonConnectUIProvider } from "@tonconnect/ui-react";
 import { UserProvider, useUser } from "./Component/context/UserContext";
 import useBackgroundMusic from "./hooks/useBackgroundMusic";
+import { useUserGame } from "./store/useUserGame";
+
 
 const API_BASE =
   import.meta.env.VITE_BACKEND_URL ||
@@ -40,6 +42,7 @@ function AppRoutes() {
   const navigate = useNavigate();
   const location = useLocation();
   const { setUser } = useUser();
+  const { setDepositInfo } = useUserGame();
 
   const hasRedirected = useRef(false);
   const didAuth = useRef(false);
@@ -135,6 +138,31 @@ function AppRoutes() {
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, [navigate, location.pathname]);
+
+
+  // =====================   PRÉCHARGEMENT DÉPÔT   =====================
+useEffect(() => {
+  if (!userReady) return;                         // attend l'auth OK
+
+  const tg       = window.Telegram?.WebApp;
+  const initData = tg?.initData;
+  if (!initData) return;
+
+  axios
+    .get(`${API_BASE}/api/user/deposit-status`, {
+      headers: { Authorization: `tma ${initData}` },
+    })
+    .then((r) => {
+      setDepositInfo({
+        has  : r.data.hasDeposited,
+        cents: r.data.depositAmount,
+      });
+    })
+    .catch((err) =>
+      console.error("❌ /deposit-status :", err?.response?.data || err),
+    );
+}, [userReady, setDepositInfo]);
+
 
   /* ───────────── Routes ───────────── */
   return (

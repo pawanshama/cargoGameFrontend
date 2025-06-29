@@ -1,40 +1,39 @@
 /* ------------------------------------------------------------------
    src/Component/pages/FreeBetMissions/Mission1.tsx
    ------------------------------------------------------------------ */
-
 import { useEffect, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 
 import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
 import Mission1AfterDeposit  from "./Mission1AfterDeposit";
 
-/*──────── types ────────*/
+import { useUserGame } from "../../../store/useUserGame";
+
 interface Mission1StatusPayload {
   unlockedParts : number;
   claimedParts  : number;
   depositCents  : number;
 }
 
-/*──────── props ────────*/
 interface Mission1Props {
-  onBack        : () => void;
-  onCollect?    : () => void;     // ouvre le pop-up succès
-  hasDeposited? : boolean;        // pré-chargé par la page parente
-  depositCents? : number | null;  // pré-chargé par la page parente
+  onBack     : () => void;
+  onCollect? : () => void;
 }
 
 /*───────────────────────────────────────────────────────────*/
-const Mission1: React.FC<Mission1Props> = (props) => {
-  const { onBack, onCollect, hasDeposited, depositCents } = props;
+const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
+  /* ───────── données globales ───────── */
+  const {
+    hasDeposited,
+    depositCents,
+    
+    setDepositInfo,
+    setMission1,
+  } = useUserGame();
 
-  /* ───────── état local (initialisé avec les props) ───────── */
-  const [depDone, setDepDone]         = useState<boolean | undefined>(hasDeposited);
-  const [depositAmt, setDepositAmt]   = useState<number | null>(depositCents ?? null);
-  const [unlocked,   setUnlocked]     = useState(0);
-  const [claimed,    setClaimed]      = useState(0);
-  const [loading,    setLoading]      = useState(hasDeposited === undefined);
+  /* spinner uniquement si l’app n’a jamais chargé */
+  const [loading, setLoading] = useState(hasDeposited === undefined);
 
-  /* helpers */
   const tg     = window.Telegram?.WebApp;
   const token  = tg?.initData || "";
   const apiURL = import.meta.env.VITE_BACKEND_URL;
@@ -42,7 +41,6 @@ const Mission1: React.FC<Mission1Props> = (props) => {
   /* ───────── GET /mission1/status ───────── */
   const fetchMissionStatus = useCallback(async () => {
     if (!token) return;
-
     try {
       const r = await fetch(
         `${apiURL}/api/mission1/status`,
@@ -52,35 +50,33 @@ const Mission1: React.FC<Mission1Props> = (props) => {
       const { data } = await r.json();
       const d = data as Mission1StatusPayload;
 
-      setUnlocked(d.unlockedParts);
-      setClaimed(d.claimedParts);
-      if (d.depositCents && depositAmt === null) setDepositAmt(d.depositCents);
+      /* maj store */
+      setMission1({ unlocked: d.unlockedParts, claimed: d.claimedParts });
+      if (d.depositCents && depositCents === undefined) {
+        setDepositInfo({ has: true, cents: d.depositCents });
+      }
     } catch {/* ignore */ }
-  }, [token, apiURL, depositAmt]);
+  }, [token, apiURL, setMission1, setDepositInfo, depositCents]);
 
   /* ───────── POST /mission1/collect (optimistic) ───────── */
   const handleCollect = () => {
     if (!token) return;
-
-    /* 1️⃣  pop-up instantané */
-    onCollect?.();
-
-    /* 2️⃣  requête en tâche de fond */
+    onCollect?.();                   // popup instantanée
     fetch(`${apiURL}/api/mission1/collect`, {
       method : "POST",
       headers: { Authorization: `tma ${token}` },
     })
       .then(() => fetchMissionStatus())
-      .catch((err) => console.error("❌ /mission1/collect :", err));
+      .catch((e) => console.error("❌ /mission1/collect :", e));
   };
 
-  /* ───────── effet principal ───────── */
+  /* ───────── premier chargement / WebSocket ───────── */
   useEffect(() => {
     const uid = (tg?.initDataUnsafe as any)?.user?.id as number | undefined;
     if (!token || !uid) { setLoading(false); return; }
 
-    /* 1️⃣  dépôt déjà fait ? (si pas fourni par la page parente) */
-    if (depDone === undefined) {
+    /* si dépôt inconnu => questionne l’API une fois */
+    if (hasDeposited === undefined) {
       (async () => {
         try {
           const r = await fetch(
@@ -89,39 +85,39 @@ const Mission1: React.FC<Mission1Props> = (props) => {
           );
           if (r.ok) {
             const j = await r.json();
-            if (j.hasDeposited && typeof j.depositAmount === "number") {
-              setDepDone(true);
-              setDepositAmt(j.depositAmount);
-              await fetchMissionStatus();
-            } else {
-              setDepDone(false);
-            }
+            setDepositInfo({
+              has  : j.hasDeposited,
+              cents: j.depositAmount,
+            });
+            if (j.hasDeposited) await fetchMissionStatus();
           }
         } finally {
           setLoading(false);
         }
       })();
     } else {
-      /* Les infos étaient déjà là → pas de spinner */
+      /* store déjà rempli → pas de spinner */
       setLoading(false);
-      if (depDone) fetchMissionStatus();
+      if (hasDeposited) fetchMissionStatus();
     }
 
-    /* 2️⃣  WebSocket pour détecter le premier dépôt */
+    /* WebSocket pour 1er dépôt (optionnel) */
     const socket: Socket = io(apiURL, {
       query: { telegramId: String(uid) },
       transports: ["websocket"],
     });
-
     socket.on("first-deposit", async (p: { amount: number }) => {
-      setDepDone(true);
-      setDepositAmt(p.amount);
+      setDepositInfo({ has: true, cents: p.amount });
       await fetchMissionStatus();
     });
-
-    /* cleanup */
     return () => { socket.disconnect(); };
-  }, [token, apiURL, depDone, fetchMissionStatus]);
+  }, [
+    token,
+    apiURL,
+    hasDeposited,
+    fetchMissionStatus,
+    setDepositInfo,
+  ]);
 
   /* ───────── rendu ───────── */
   if (loading) {
@@ -132,13 +128,11 @@ const Mission1: React.FC<Mission1Props> = (props) => {
     );
   }
 
-  return depDone && depositAmt !== null ? (
+  return hasDeposited && depositCents !== undefined ? (
     <Mission1AfterDeposit
       onBack={onBack}
       onCollect={handleCollect}
-      depositAmount={depositAmt}
-      unlockedParts={unlocked}
-      claimedParts={claimed}
+      depositAmount={depositCents}
     />
   ) : (
     <Mission1BeforeDeposit onBack={onBack} />
