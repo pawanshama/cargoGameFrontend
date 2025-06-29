@@ -1,39 +1,33 @@
 /* ------------------------------------------------------------------
    src/Component/pages/FreeBetMissions/PopupMission1.tsx
    ------------------------------------------------------------------ */
-import React from "react";
-import { useNavigate } from "react-router-dom";
 import Button from "../../common/Button";
+import { useNavigate } from "react-router-dom";
 
-/*───────── PROPS ─────────*/
 interface PopupMission1Props {
-  onClose      : () => void;
-  rewardAmount?: number; // ex : 20
+  onClose: () => void;
+  rewardAmount?: number;           // ex : 20
 }
 
-/*───────── COMPOSANT ─────*/
-const PopupMission1: React.FC<PopupMission1Props> = ({
-  onClose,
-  rewardAmount = 20,
-}) => {
+const PopupMission1 = ({ onClose, rewardAmount = 20 }: PopupMission1Props) => {
   const navigate = useNavigate();
 
-  /* 🔊 clic bouton */
   const playClickSound = () => {
     const audio = new Audio("/sounds/click.mp3");
     audio.play().catch(() => {});
   };
 
-  /*───────── RENDER ───────*/
   return (
     <div className="fixed inset-0 z-50 bg-[#160028]/90 flex items-center justify-center">
-      {/* 💰 ANIMATION DES PIÈCES */}
+
+      {/* 💰 ANIMATION DES PIÈCES (identique à PopupMission2) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        {[...Array(20)].map((_, index) => {
+        {[...Array(30)].map((_, index) => {
           const size     = 20 + Math.random() * 20;
           const left     = Math.random() * 100;
           const delay    = Math.random() * 1.5;
           const duration = 2 + Math.random() * 1.5;
+
           return (
             <img
               key={`coin-${index}`}
@@ -87,5 +81,4 @@ const PopupMission1: React.FC<PopupMission1Props> = ({
   );
 };
 
-/* Empêche les re-rendus si les props ne changent pas */
-export default React.memo(PopupMission1);
+export default PopupMission1;
