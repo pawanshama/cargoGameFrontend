@@ -28,8 +28,11 @@ import { TonConnectUIProvider } from "@tonconnect/ui-react";
 import { UserProvider, useUser } from "./Component/context/UserContext";
 import useBackgroundMusic from "./hooks/useBackgroundMusic";
 
+import * as dotenv from "dotenv"
+dotenv.config()
+
 const API_BASE =
-  import.meta.env.VITE_BACKEND_URL ||
+  process.env.VITE_BACKEND_URL ??
   "https://corgi-in-space-backend-production.up.railway.app";
 
 /* ========================================================================= */
