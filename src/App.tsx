@@ -29,12 +29,8 @@ import { UserProvider, useUser } from "./Component/context/UserContext";
 import useBackgroundMusic from "./hooks/useBackgroundMusic";
 import { useUserGame } from "./store/useUserGame";
 
-
-import * as dotenv from "dotenv"
-dotenv.config()
-
 const API_BASE =
-  process.env.VITE_BACKEND_URL ??
+  import.meta.env.VITE_BACKEND_URL ||
   "https://corgi-in-space-backend-production.up.railway.app";
 
 /* ========================================================================= */
