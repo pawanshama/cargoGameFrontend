@@ -25,7 +25,7 @@ export default function useMission1() {
       if (!initData) throw new Error("initData missing");
 
       const { data } = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/missions/1/status`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/mission1/status`,
         { headers: { Authorization: `tma ${initData}` } },
       );
       return data as Mission1Status;
