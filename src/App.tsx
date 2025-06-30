@@ -31,7 +31,7 @@ import { useUserGame } from "./store/useUserGame";
 
 const API_BASE =
   import.meta.env.VITE_BACKEND_URL ||
-  "https://corgi-in-space-backend-production.up.railway.app";
+  "https://ae0e-2402-e280-230d-3ff-945-fd4e-1470-53f8.ngrok-free.app";
 
 /* ========================================================================= */
 /*                               SUB-ROUTES                                  */
