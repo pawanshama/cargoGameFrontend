@@ -7,10 +7,11 @@ import axios from "axios";
 /* Clé unique de cache : réutilise-la partout */
 export const mission1Key = ["mission1-status"];
 
+/* 🔹 Interface alignée sur la réponse backend */
 interface Mission1Status {
-  depositAmount : number;  // en cents
-  unlockedParts : number;  // 0-5
-  claimedParts  : number;  // 0-5
+  depositCents : number;   // <- en cents
+  unlockedParts: number;   // 0-5
+  claimedParts : number;   // 0-5
 }
 
 /**
@@ -28,8 +29,10 @@ export default function useMission1() {
         `${import.meta.env.VITE_BACKEND_URL}/api/mission1/status`,
         { headers: { Authorization: `tma ${initData}` } },
       );
+
+      /* tu peux typer directement : */
       return data as Mission1Status;
     },
-    staleTime: 60_000,        // 1 minute
+    staleTime: 60_000, // 1 minute
   });
 }
