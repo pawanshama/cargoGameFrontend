@@ -18,7 +18,7 @@ interface Mission1StatusPayload {
 
 interface Mission1Props {
   onBack   : () => void;
-  onCollect?: () => void;              // ouvre le pop-up succès
+  onCollect?: () => void;          // pop-up succès
 }
 
 /*───────────────────────────────────────────────────────────*/
@@ -27,16 +27,11 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
   const {
     hasDeposited,
     depositCents,
-    mission1,
     setDepositInfo,
     setMission1,
   } = useUserGame();
 
-  /* --------- dérivés --------- */
-  const unlocked = mission1?.unlockedParts ?? 0;
-  const claimed  = mission1?.claimedParts  ?? 0;
-
-  /* --------- loader --------- */
+  /* --------- loader local --------- */
   const [loading, setLoading] = useState(hasDeposited === undefined);
 
   /* --------- helpers --------- */
@@ -57,20 +52,19 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
       const { data } = await r.json();
       const d = data as Mission1StatusPayload;
 
+      // garde le store pour d’autres écrans
       setMission1({ unlocked: d.unlockedParts, claimed: d.claimedParts });
 
       if (d.depositCents && depositCents === undefined) {
         setDepositInfo({ has: true, cents: d.depositCents });
       }
-    } catch {
-      /* silencieux */
-    }
+    } catch {/* silencieux */}
   }, [apiURL, token, depositCents, setMission1, setDepositInfo]);
 
+  /* --------- collect --------- */
   const handleCollect = () => {
     if (!token) return;
-
-    onCollect?.();   // pop-up immédiat
+    onCollect?.();                       // pop-up immédiat
 
     fetch(`${apiURL}/api/mission1/collect`, {
       method : "POST",
@@ -82,11 +76,10 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
 
   /* ============ effet 1 : dépôt + spinner ============ */
   useEffect(() => {
-    const uid = (tg?.initDataUnsafe as any)?.user?.id as number | undefined;
-    if (!token || !uid) { setLoading(false); return; }
+    if (!token) { setLoading(false); return; }
 
-    if (hasDeposited === undefined) {
-      (async () => {
+    const load = async () => {
+      if (hasDeposited === undefined) {
         try {
           const r = await fetch(
             `${apiURL}/api/user/deposit-status`,
@@ -97,14 +90,14 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
             setDepositInfo({ has: j.hasDeposited, cents: j.depositAmount });
             if (j.hasDeposited) await fetchMissionStatus();
           }
-        } finally {
-          setLoading(false);
-        }
-      })();
-    } else {
-      setLoading(false);
-      if (hasDeposited) fetchMissionStatus();
-    }
+        } finally { setLoading(false); }
+      } else {
+        setLoading(false);
+        if (hasDeposited) fetchMissionStatus();
+      }
+    };
+
+    load();
   }, [apiURL, token, hasDeposited, fetchMissionStatus, setDepositInfo]);
 
   /* ============ effet 2 : WebSocket premier dépôt ============ */
@@ -113,7 +106,7 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
     if (!token || !uid) return;
 
     const socket: Socket = io(apiURL, {
-      query     : { telegramId: String(uid) },
+      query: { telegramId: String(uid) },
       transports: ["websocket"],
     });
 
@@ -122,7 +115,6 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
       await fetchMissionStatus();
     });
 
-    /* cleanup : retourne void  */
     return () => { socket.disconnect(); };
   }, [apiURL, token, fetchMissionStatus, setDepositInfo]);
 
@@ -139,9 +131,7 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
     <Mission1AfterDeposit
       onBack={onBack}
       onCollect={handleCollect}
-      depositAmount={depositCents}
-      unlockedParts={unlocked}
-      claimedParts={claimed}
+      /* plus de props de data : useMission1 s’en charge */
     />
   ) : (
     <Mission1BeforeDeposit onBack={onBack} />

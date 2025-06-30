@@ -2,40 +2,58 @@
    src/components/missions/Mission1AfterDeposit.tsx
    ------------------------------------------------------------------ */
 import React from "react";
-import Button from "../../common/Button";
+import Button           from "../../common/Button";
 import { formatFreeBet } from "../../../utils/format-freebet";
+import useMission1      from "../../../hooks/useMission1";   // 🆕
 
-/*────────────── PROPS ──────────────*/
+// ────────────── PROPS ──────────────
 interface Mission1AfterDepositProps {
-  onBack      : () => void;
-  onCollect   : () => void;
-  depositAmount : number;     // 💰 premier dépôt (en cents)
-  unlockedParts : number;     // 0-5  → parties débloquées
-  claimedParts  : number;     // 0-5  → déjà réclamées
+  onBack   : () => void;
+  onCollect: () => void;
 }
 
-/*────────────── SFX ──────────────*/
+// ────────────── SFX ──────────────
 const playCollectSound = () => {
   const audio = new Audio("/assets/sounds/10.Moneyadded.mp3");
-  audio.play().catch(err => console.error("❌ Audio error:", err));
+  audio.play().catch((err) => console.error("❌ Audio error:", err));
 };
 
 const TOTAL_PARTS = 5;
 
+/* ------------------------------------------------------------------ */
 const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
   onBack,
   onCollect,
-  depositAmount,
-  unlockedParts,
-  claimedParts,
 }) => {
-  /*───────────── DÉRIVÉS ─────────────*/
-  const milestone = (depositAmount / TOTAL_PARTS) / 1000;
-  const claimableParts = Math.max(0, unlockedParts - claimedParts);
-  const isCompleted    = claimedParts === TOTAL_PARTS;
-  const nothingToClaim = claimableParts === 0;
+  /* --------- données mission depuis React-Query --------- */
+  const { data, isLoading, isError } = useMission1();
 
-  /*───────────── RENDU ─────────────*/
+  if (isLoading || !data) {
+    return (
+      <div className="absolute inset-0 z-50 bg-[#160028]/95 flex items-center justify-center">
+        {/* petit loader */}
+        <img src="/assets/loader.svg" alt="Loading" className="w-10 h-10 animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="absolute inset-0 z-50 bg-[#160028]/95 flex flex-col items-center justify-center text-white">
+        <p className="mb-4">Unable to load mission status…</p>
+        <button className="underline" onClick={onBack}>← Back</button>
+      </div>
+    );
+  }
+
+  /* --------- dérivés --------- */
+  const { depositAmount, unlockedParts, claimedParts } = data;
+  const milestone       = (depositAmount / TOTAL_PARTS) / 1000;
+  const claimableParts  = Math.max(0, unlockedParts - claimedParts);
+  const isCompleted     = claimedParts === TOTAL_PARTS;
+  const nothingToClaim  = claimableParts === 0;
+
+  /* --------- rendu --------- */
   return (
     <div className="absolute inset-0 z-50 bg-[#160028]/95 overflow-y-auto">
       <div className="px-4 pt-10 pb-40 h-screen text-center overflow-y-auto">
@@ -55,7 +73,7 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
         {/*                CARTE « COLLECT »                           */}
         {/*------------------------------------------------------------*/}
         <div className="mt-10 flex flex-col items-center gap-8">
-          {/* Carte cliquable (pulsante seulement si claimable) */}
+          {/* Carte cliquable */}
           <div
             onClick={() => {
               if (nothingToClaim) return;
@@ -96,12 +114,9 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
               {Array.from({ length: TOTAL_PARTS }).map((_, i) => (
                 <div
                   key={i}
-                  className={`flex-1 h-4 mx-1 rounded-full transition
-                    ${
-                      i < unlockedParts
-                        ? "bg-[#00FFB2]"
-                        : "bg-[#5e2d82]"
-                    }`}
+                  className={`flex-1 h-4 mx-1 rounded-full transition ${
+                    i < unlockedParts ? "bg-[#00FFB2]" : "bg-[#5e2d82]"
+                  }`}
                 />
               ))}
             </div>
@@ -112,9 +127,7 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
                 <div key={i} className="w-[20%] flex justify-center">
                   <div
                     className={`w-[1px] h-[14px] ${
-                      i < unlockedParts
-                        ? "bg-[#00FFB2]"
-                        : "bg-[#00FFB2]/50"
+                      i < unlockedParts ? "bg-[#00FFB2]" : "bg-[#00FFB2]/50"
                     }`}
                   />
                 </div>
@@ -125,13 +138,8 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
           {/* Légende sous la barre */}
           <div className="w-full max-w-[90%] flex justify-between -mt-2 text-xs text-white font-lato z-30">
             {Array.from({ length: TOTAL_PARTS }).map((_, i) => (
-              <div
-                key={i}
-                className="flex flex-col items-center w-[20%] leading-tight text-center"
-              >
-                <span className="text-[11px] mb-[2px]">
-                  Bet
-                </span>
+              <div key={i} className="flex flex-col items-center w-[20%] leading-tight text-center">
+                <span className="text-[11px] mb-[2px]">Bet</span>
                 <span className="text-[14px] font-bold">
                   ${formatFreeBet(milestone)}
                 </span>
@@ -140,15 +148,15 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
                     i < unlockedParts ? "text-[#00FFB2]" : "text-white/40"
                   }`}
                 >
-                  Get {formatFreeBet(milestone)}<br />Free Bet
+                  Get {formatFreeBet(milestone)}
+                  <br />
+                  Free Bet
                 </span>
               </div>
             ))}
           </div>
 
-          {/*--------------------------------------------------------*/}
-          {/*            BOUTON COLLECT (redondant)                  */}
-          {/*--------------------------------------------------------*/}
+          {/*------------------ BOUTON COLLECT (redondant) -------------------*/}
           <div className="mt-4">
             <Button
               label={
@@ -169,18 +177,14 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
           </div>
         </div>
 
-        {/*--------------------------------------------------------*/}
-        {/*                SECTION AIDE / FAQ                      */}
-        {/*--------------------------------------------------------*/}
+        {/*------------------ SECTION AIDE / FAQ ----------------------------*/}
         <p className="font-bold text-white text-lg underline font-designer uppercase mt-10 mb-6">
           How can I access my free bets?
         </p>
 
         <div className="mt-10 px-4 space-y-4">
           <div className="border border-[#9752b9] rounded-xl p-4">
-            <h3 className="font-bold text-white text-lg mb-2 font-designer uppercase">
-              STEP 1
-            </h3>
+            <h3 className="font-bold text-white text-lg mb-2 font-designer uppercase">STEP 1</h3>
             <p className="text-sm text-white/80">
               Deposit your first amount. For example, deposit $
               {(depositAmount / 1000).toFixed(3)}.
@@ -188,9 +192,7 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
           </div>
 
           <div className="border border-[#9752b9] rounded-xl p-4">
-            <h3 className="font-bold text-white text-lg mb-2 font-designer uppercase">
-              STEP 2
-            </h3>
+            <h3 className="font-bold text-white text-lg mb-2 font-designer uppercase">STEP 2</h3>
             <p className="text-sm text-white/80">
               Place real bets. Each time you wager $
               {formatFreeBet(milestone)} in total, you unlock $
@@ -199,9 +201,7 @@ const Mission1AfterDeposit: React.FC<Mission1AfterDepositProps> = ({
           </div>
         </div>
 
-        {/*--------------------------------------------------------*/}
-        {/*                       RETOUR                            */}
-        {/*--------------------------------------------------------*/}
+        {/*------------------ RETOUR ----------------------------*/}
         <button
           className="mt-6 text-[#00FFB2] underline font-bold active:scale-95"
           onClick={onBack}
