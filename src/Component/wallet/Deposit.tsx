@@ -1,20 +1,23 @@
-/* src/Component/pages/Wallet/Deposit.tsx
-   — Glass + Animations (tags 100 % fermées)                       */
+/* --------------------------------------------------------------------------
+   src/Component/pages/Wallet/Deposit.tsx
+   -------------------------------------------------------------------------- */
 
 import { useEffect, useRef, useState } from "react";
 import { useTonWallet, useTonConnectUI } from "@tonconnect/ui-react";
 import { Address } from "@ton/core";
 import { motion, AnimatePresence } from "framer-motion";
 import Button from "../common/Button";
+import { useWallet } from "../context/WalletContext";     // 🆕 contexte global
 
-interface DepositProps {
-  refreshWallet: () => void;
-}
+/* ------------------------------------------------------------------ const */
 
 const DEPOSIT_ADDRESS =
   "UQCcgQqpCCWy3YEzLLqRRQowXf5-YUC8nbPYP--WQm3dI8E8";
 
-const Deposit: React.FC<DepositProps> = ({ refreshWallet }) => {
+/* ------------------------------------------------------------------ comp  */
+
+const Deposit: React.FC = () => {
+  /* Ton / UI state */
   const wallet  = useTonWallet();
   const [tonUI] = useTonConnectUI();
 
@@ -24,15 +27,17 @@ const Deposit: React.FC<DepositProps> = ({ refreshWallet }) => {
     "idle",
   );
 
-  const sentRef = useRef(false);
-
+  const sentRef  = useRef(false);
   const connected = !!wallet?.account?.address;
   const rawAddr   = wallet?.account?.address;
   const friendly  = rawAddr
     ? Address.parse(rawAddr).toString({ bounceable: false, testOnly: false })
     : "";
 
-  /* push wallet once */
+  /* WalletContext : pour rafraîchir le solde */
+  const { refreshWallet } = useWallet();                  // 🆕
+
+  /* ---------------- push wallet once ------------------- */
   useEffect(() => {
     if (!connected || sentRef.current) return;
     sentRef.current = true;
@@ -46,7 +51,7 @@ const Deposit: React.FC<DepositProps> = ({ refreshWallet }) => {
     }).catch(console.error);
   }, [connected, friendly]);
 
-  /* balance */
+  /* ---------------- balance onchain -------------------- */
   useEffect(() => {
     if (!connected) return;
     const id = setTimeout(async () => {
@@ -63,7 +68,7 @@ const Deposit: React.FC<DepositProps> = ({ refreshWallet }) => {
     return () => clearTimeout(id);
   }, [connected, rawAddr]);
 
-  /* deposit */
+  /* ---------------- send deposit ----------------------- */
   const sendDeposit = async () => {
     const ton = parseFloat(amount);
     if (!ton || ton <= 0) return alert("Enter a valid amount");
@@ -76,15 +81,18 @@ const Deposit: React.FC<DepositProps> = ({ refreshWallet }) => {
       });
 
       new Audio("/assets/sounds/10.Moneyadded.mp3").play().catch(() => {});
-      setTimeout(() => {
-        refreshWallet();
+      /* ⏳ laisse le temps à la tx d’être indexée, puis rafraîchit le solde */
+      setTimeout(async () => {
+        await refreshWallet();       // ✅ met à jour le contexte
         setState("done");
+        setAmt("");
       }, 3_000);
     } catch {
       setState("error");
     }
   };
 
+  /* ---------------------------------------------------------------- render */
   return (
     <div className="w-full max-w-[420px] mx-auto text-white font-lato">
       <motion.div
@@ -125,11 +133,7 @@ const Deposit: React.FC<DepositProps> = ({ refreshWallet }) => {
             {/* CTA & status */}
             <div className="flex flex-col items-center mt-7 gap-3">
               <motion.div
-                animate={
-                  state === "sending"
-                    ? { scale: [1, 1.08, 1] }
-                    : { scale: 1 }
-                }
+                animate={state === "sending" ? { scale: [1, 1.08, 1] } : { scale: 1 }}
                 transition={{ repeat: state === "sending" ? Infinity : 0, duration: 1 }}
               >
                 <Button
@@ -187,7 +191,7 @@ const Deposit: React.FC<DepositProps> = ({ refreshWallet }) => {
   );
 };
 
-/* -------- sub components -------- */
+/* ---------------- helpers ---------------- */
 
 const Info = ({
   label,

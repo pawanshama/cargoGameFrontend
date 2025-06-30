@@ -28,6 +28,7 @@ import { TonConnectUIProvider } from "@tonconnect/ui-react";
 import { UserProvider, useUser } from "./Component/context/UserContext";
 import useBackgroundMusic from "./hooks/useBackgroundMusic";
 import { useUserGame } from "./store/useUserGame";
+import { WalletProvider } from "./Component/context/WalletContext";
 
 
 const API_BASE =
@@ -185,6 +186,7 @@ useEffect(() => {
 /*                                   ROOT                                    */
 /* ========================================================================= */
 
+
 function App() {
   useBackgroundMusic("/assets/sounds/21Musichome.mp3", 0.1);
 
@@ -194,13 +196,15 @@ function App() {
       actionsConfiguration={{ twaReturnUrl: "https://t.me/CorginSpaceBot" }}
     >
       <UserProvider>
-        <div className="flex font-lato place-content-center relative">
-          <div className="w-full max-w-[640px]">
-            <Router>
-              <AppRoutes />
-            </Router>
+        <WalletProvider>          {/* 🆕 */}
+          <div className="flex font-lato place-content-center relative">
+            <div className="w-full max-w-[640px]">
+              <Router>
+                <AppRoutes />
+              </Router>
+            </div>
           </div>
-        </div>
+        </WalletProvider>
       </UserProvider>
     </TonConnectUIProvider>
   );

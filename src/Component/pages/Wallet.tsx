@@ -1,31 +1,31 @@
-/* src/Component/pages/Wallet/Wallet.tsx
-   – version sans erreurs TS + animations                         */
+/* --------------------------------------------------------------------------
+   src/Component/pages/Wallet/Wallet.tsx
+   -------------------------------------------------------------------------- */
 
 import { useState } from "react";
-import Header   from "../includes/Header";
-import Footer   from "../includes/Footer";
-import Success  from "../modals/Success";
-import Deposit  from "../wallet/Deposit";
-import Withdraw from "../wallet/Withdraw";
-import Tabs     from "../common/Tabs";
+import Header     from "../includes/Header";
+import Footer     from "../includes/Footer";
+import Success    from "../modals/Success";
+import Deposit    from "../wallet/Deposit";
+import Withdraw   from "../wallet/Withdraw";
+import Tabs       from "../common/Tabs";
 import { useTonWallet, useTonConnectUI } from "@tonconnect/ui-react";
 import { Address } from "@ton/core";
 import { motion, AnimatePresence } from "framer-motion";
 
-/* ---------- types ---------- */
+/* ---------- internal types ---------- */
 interface Tab {
   label: string;
   index: number;
 }
 
 const Wallet: React.FC = () => {
-  /* ---------------- state ---------------- */
+  /* ---------------- UI state ---------------- */
   const [activeTab, setActiveTab] = useState<0 | 1>(0);
   const [isSuccess, setIsSuccess] = useState(false);
   const [inputs, setInputs]       = useState({ amount: "" });
-  const [refresh, setRefresh]     = useState(0);
 
-  /* ---------------- Ton ---------------- */
+  /* ---------------- TON wallet ---------------- */
   const wallet  = useTonWallet();
   const [tonUI] = useTonConnectUI();
   const connected = !!wallet?.account?.address;
@@ -36,28 +36,27 @@ const Wallet: React.FC = () => {
       })
     : "";
 
-  const triggerRefresh = () => setRefresh((p) => p + 1);
-
   /* ---------------- callbacks ---------------- */
   const onInput =
-  (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setInputs((prev) => ({ ...prev, [k]: e.target.value }));
+    (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
+      setInputs((prev) => ({ ...prev, [k]: e.target.value }));
 
   const onWithdrawSuccess = () => {
     setIsSuccess(true);
     setInputs({ amount: "" });
   };
 
-  /* ---------------- UI ---------------- */
+  /* ---------------- tabs config ---------------- */
   const tabs: Tab[] = [
     { label: "Deposit",  index: 0 },
     { label: "Withdraw", index: 1 },
   ];
 
+  /* --------------------------------------------------------------------- */
   return (
     <>
       <div className="w-full overflow-hidden">
-        <Header pageHeading="My Wallet" refreshTrigger={refresh} />
+        <Header pageHeading="My Wallet" />
 
         <div className="px-4 pt-6 pb-[7.5rem] h-[calc(100dvh_-_clamp(6rem,60vw,8.25rem))] overflow-y-auto">
           {/* ===== wallet connect bloc ===== */}
@@ -123,13 +122,12 @@ const Wallet: React.FC = () => {
             transition={{ type: "spring", stiffness: 60, damping: 12 }}
           >
             {activeTab === 0 ? (
-              <Deposit refreshWallet={triggerRefresh} />
+              <Deposit />                       
             ) : (
               <Withdraw
                 inputValues={inputs}
                 handleInputChange={onInput}
                 handleWithdraw={onWithdrawSuccess}
-                refreshWallet={triggerRefresh}
               />
             )}
           </motion.div>
