@@ -3,7 +3,7 @@
    ------------------------------------------------------------------ */
 
 import { useEffect, useState, useCallback } from "react";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 
 import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
 import Mission1AfterDeposit  from "./Mission1AfterDeposit";
@@ -53,6 +53,7 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
         { headers: { Authorization: `tma ${token}` } },
       );
       if (!r.ok) return;
+
       const { data } = await r.json();
       const d = data as Mission1StatusPayload;
 
@@ -61,12 +62,16 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
       if (d.depositCents && depositCents === undefined) {
         setDepositInfo({ has: true, cents: d.depositCents });
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* silencieux */
+    }
   }, [apiURL, token, depositCents, setMission1, setDepositInfo]);
 
   const handleCollect = () => {
     if (!token) return;
-    onCollect?.();            // pop-up immédiat
+
+    onCollect?.();   // pop-up immédiat
+
     fetch(`${apiURL}/api/mission1/collect`, {
       method : "POST",
       headers: { Authorization: `tma ${token}` },
@@ -75,7 +80,7 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
       .catch((e) => console.error("❌ /mission1/collect :", e));
   };
 
-  /* ============ effet 1 : statut dépôt / spinner ============ */
+  /* ============ effet 1 : dépôt + spinner ============ */
   useEffect(() => {
     const uid = (tg?.initDataUnsafe as any)?.user?.id as number | undefined;
     if (!token || !uid) { setLoading(false); return; }
@@ -102,12 +107,12 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
     }
   }, [apiURL, token, hasDeposited, fetchMissionStatus, setDepositInfo]);
 
-  /* ============ effet 2 : WebSocket pour 1er dépôt ============ */
+  /* ============ effet 2 : WebSocket premier dépôt ============ */
   useEffect(() => {
     const uid = (tg?.initDataUnsafe as any)?.user?.id as number | undefined;
     if (!token || !uid) return;
 
-    const socket = io(apiURL, {
+    const socket: Socket = io(apiURL, {
       query     : { telegramId: String(uid) },
       transports: ["websocket"],
     });
@@ -117,7 +122,7 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
       await fetchMissionStatus();
     });
 
-    /* ⬇️ le cleanup DOIT renvoyer void, donc on entoure disconnect() de {} */
+    /* cleanup : retourne void  */
     return () => { socket.disconnect(); };
   }, [apiURL, token, fetchMissionStatus, setDepositInfo]);
 
