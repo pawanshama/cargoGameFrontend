@@ -47,6 +47,7 @@ function AppRoutes() {
   const { setUser } = useUser();
   const { setDepositInfo } = useUserGame();
 
+  
   const hasRedirected = useRef(false);
   const didAuth = useRef(false);
   const [userReady, setUserReady] = useState(false);
