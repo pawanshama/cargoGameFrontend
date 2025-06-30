@@ -308,7 +308,7 @@ if (showGame && gameUrl) {
                   onChange={(e) => {
                     const v = parseFloat(e.target.value);
                     setMultiplier(v);
-                    setTooltipX(((v - 1) / 9) * 100);
+                    setTooltipX(((v - 1) / 9) * 1000);
                   }}
                   onMouseDown={() => setShowTooltip(true)}
                   onMouseUp={() => setShowTooltip(false)}

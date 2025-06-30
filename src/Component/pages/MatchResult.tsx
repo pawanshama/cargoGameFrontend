@@ -28,7 +28,7 @@ const MatchResult: React.FC<MatchResultProps> = ({
       userScore,
       opponentScore,
       betAmount,
-      rewardDollars: reward / 100,
+      rewardDollars: reward / 1000,
     });
   }, [result, userScore, opponentScore, betAmount, reward]);
 
