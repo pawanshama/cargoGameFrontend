@@ -22,8 +22,8 @@ import ImgWithFallback from "../common/ImageWithFallback";
 import useTelegramSafeSound from "../../hooks/useTelegramSafeSound";
 import MatchResult from "./MatchResult";
 import { motion } from "framer-motion";
-import { useQueryClient } from "@tanstack/react-query";
-import { mission1Key }    from "../../hooks/useMission1Query";
+import useInvalidateMission1 from "../../hooks/useInvalidateMission1";
+
 
 
 
@@ -58,7 +58,8 @@ const Bet: React.FC = () => {
   const [showTooltip, setShowTooltip]           = useState(false);
   const [tooltipX, setTooltipX]                 = useState(0);
   const [isLoading, setIsLoading]               = useState(false);
-  const qc = useQueryClient();
+  const invalidateMission1 = useInvalidateMission1();
+
 
   /* sounds */
   const suggestions       = useMemo(() => [1, 5, 25, 100], []);
@@ -173,13 +174,13 @@ if (tg) {
       setGameUrl(url.toString());
       setShowGame(true);
 
-      qc.invalidateQueries({ queryKey: mission1Key });
+      invalidateMission1(); // refetch instantané /mission1/status
 
     } catch (err) {
       console.error(err);
       setIsLoading(false);
     }
-  }, [isLoading, amount, playBetSound]);
+  }, [isLoading, amount, playBetSound, invalidateMission1]);
 
   /* 5. Match result overlay */
   if (matchResult)

@@ -7,7 +7,9 @@ import { useTonWallet, useTonConnectUI } from "@tonconnect/ui-react";
 import { Address } from "@ton/core";
 import { motion, AnimatePresence } from "framer-motion";
 import Button from "../common/Button";
-import { useWallet } from "../context/WalletContext";     // 🆕 contexte global
+import { useWallet }       from "../context/WalletContext";     // 🆕 contexte global
+import { useUserGame }     from "../../store/useUserGame";   // 🆕 store global
+import useInvalidateMission1 from "../../hooks/useInvalidateMission1"; // 🆕 refetch
 
 /* ------------------------------------------------------------------ const */
 
@@ -36,6 +38,10 @@ const Deposit: React.FC = () => {
 
   /* WalletContext : pour rafraîchir le solde */
   const { refreshWallet } = useWallet();                  // 🆕
+
+  const { setDepositInfo }   = useUserGame();          // 🆕 hydrate le store
+const invalidateMission1   = useInvalidateMission1(); // 🆕 refetch instantané
+
 
   /* ---------------- push wallet once ------------------- */
   useEffect(() => {
@@ -84,6 +90,17 @@ const Deposit: React.FC = () => {
       /* ⏳ laisse le temps à la tx d’être indexée, puis rafraîchit le solde */
       setTimeout(async () => {
         await refreshWallet();       // ✅ met à jour le contexte
+
+
+
+// 🆕 1.  alimente le store avec le nouveau dépôt
+setDepositInfo({ has: true, cents: Math.round(ton * 1000) });
+
+// 🆕 2.  force le refetch /mission1/status pour afficher “After Deposit”
+invalidateMission1();
+
+
+
         setState("done");
         setAmt("");
       }, 3_000);

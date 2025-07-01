@@ -9,6 +9,8 @@ import { useUserGame } from "../store/useUserGame";
 import { useQueryClient } from "@tanstack/react-query";
 import { mission1Key } from "./useMission1Query";
 
+
+
 export const useBootstrapUser = () => {
   const { setDepositInfo, setMission1 } = useUserGame();
   const qc = useQueryClient();

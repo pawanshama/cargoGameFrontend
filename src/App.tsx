@@ -152,7 +152,7 @@ function AppRoutes() {
 function AppLogic() {
   useBackgroundMusic("/assets/sounds/21Musichome.mp3", 0.1);
   useBootstrapUser();                   // pré-fetch dépôt + Mission 1
-  useMission1Query({ staleTime: 60_000 });
+  useMission1Query({ staleTime: 5_000 });
 
   return (
     <Router>
