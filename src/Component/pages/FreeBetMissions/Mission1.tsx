@@ -5,19 +5,19 @@
 import { useEffect, useState, useCallback } from "react";
 
 import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
-import Mission1AfterDeposit from "./Mission1AfterDeposit";
-import { useUserGame } from "../../../store/useUserGame";
+import Mission1AfterDeposit  from "./Mission1AfterDeposit";
+import { useUserGame }       from "../../../store/useUserGame";
 
 /*────────── Types ──────────*/
 interface Mission1StatusPayload {
   unlockedParts: number;
-  claimedParts: number;
-  depositCents: number;
+  claimedParts : number;
+  depositCents : number;
 }
 
 interface Mission1Props {
-  onBack: () => void;
-  onCollect?: () => void; // pop‑up succès
+  onBack   : () => void;
+  onCollect?: () => void; // pop-up succès
 }
 
 /*───────────────────────────────────────────────────────────*/
@@ -31,11 +31,11 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
   } = useUserGame();
 
   /* --------- loader local --------- */
-  const [loading, setLoading] = useState(hasDeposited === undefined);
+  const [loading, setLoading] = useState(true);
 
   /* --------- helpers --------- */
-  const tg = window.Telegram?.WebApp;
-  const token = tg?.initData || "";
+  const tg     = window.Telegram?.WebApp;
+  const token  = tg?.initData || "";
   const apiURL = import.meta.env.VITE_BACKEND_URL;
 
   /* =================== helpers API =================== */
@@ -64,7 +64,7 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
   /* --------- collect --------- */
   const handleCollect = () => {
     if (!token) return;
-    onCollect?.(); // pop‑up immédiat
+    onCollect?.(); // pop-up immédiat
 
     fetch(`${apiURL}/api/mission1/collect`, {
       method: "POST",
@@ -82,38 +82,38 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
     }
 
     const load = async () => {
-      if (hasDeposited === undefined) {
-        try {
-          const r = await fetch(`${apiURL}/api/user/deposit-status`, {
-            headers: { Authorization: `tma ${token}` },
-          });
-          if (r.ok) {
-            const j = await r.json();
-            setDepositInfo({ has: j.hasDeposited, cents: j.depositAmount });
-            if (j.hasDeposited) await fetchMissionStatus();
-          }
-        } finally {
-          setLoading(false);
+      try {
+        // 1️⃣  Toujours récupérer le statut dépôt
+        const r = await fetch(`${apiURL}/api/user/deposit-status`, {
+          headers: { Authorization: `tma ${token}` },
+        });
+        if (r.ok) {
+          const j = await r.json();
+          setDepositInfo({ has: j.hasDeposited, cents: j.depositAmount });
+
+          // 2️⃣  Si dépôt → récupérer l’état de la mission
+          if (j.hasDeposited) await fetchMissionStatus();
         }
-      } else {
-        setLoading(false);
-        if (hasDeposited) fetchMissionStatus();
+      } catch (e) {
+        console.error("❌ /user/deposit-status :", e);
+      } finally {
+        setLoading(false); // ✅  Fin unique
       }
     };
 
     load();
-  }, [apiURL, token, hasDeposited, fetchMissionStatus, setDepositInfo]);
+  }, [apiURL, token, fetchMissionStatus, setDepositInfo]);
 
   /* =================== rendu =================== */
   if (loading) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-[#160028]/90 z-50">
-        <p className="text-white animate-pulse">Loading…</p>
+      <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#160028]/90">
+        <p className="animate-pulse text-white">Loading…</p>
       </div>
     );
   }
 
-  return hasDeposited && depositCents !== undefined ? (
+  return hasDeposited ? (
     <Mission1AfterDeposit onBack={onBack} onCollect={handleCollect} />
   ) : (
     <Mission1BeforeDeposit onBack={onBack} />
