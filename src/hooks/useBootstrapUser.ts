@@ -1,7 +1,7 @@
 // src/hooks/useBootstrapUser.ts
 // ------------------------------------------------------------
-// Pré-charge dépôt + Mission 1, puis alimente à la fois
-// le store Zustand *et* le cache React-Query.
+// Pré-charge dépôt + Mission 1, alimente le store Zustand
+// et initialise le cache React-Query.
 // ------------------------------------------------------------
 
 import { useEffect } from "react";
@@ -22,34 +22,48 @@ export const useBootstrapUser = () => {
 
     (async () => {
       try {
-        /* 1️⃣  Dépôt — toujours */
+        /* 1️⃣  Statut dépôt (toujours) ----------------------- */
         const depRes = await fetch(`${apiURL}/api/user/deposit-status`, {
           headers: { Authorization: `tma ${token}` },
         });
         if (!depRes.ok) return;
-        const dep = await depRes.json();
+        const dep = await depRes.json();   // { hasDeposited, depositAmount }
 
-        setDepositInfo({ has: dep.hasDeposited, cents: dep.depositAmount });
+        const hasDeposit = dep.depositAmount > 0 || dep.hasDeposited === true;
 
-        /* 2️⃣  Mission 1 — seulement si un premier dépôt existe */
-        if (dep.hasDeposited) {
+        /* hydrate store */
+        setDepositInfo({ has: hasDeposit, cents: dep.depositAmount });
+
+        /* 2️⃣  Mission 1 si dépôt présent -------------------- */
+        if (hasDeposit) {
           const misRes = await fetch(`${apiURL}/api/mission1/status`, {
             headers: { Authorization: `tma ${token}` },
           });
           if (!misRes.ok) return;
 
-          const { data } = await misRes.json();        // payload réel
+          const { data } = await misRes.json(); // payload front-ready
+
+          /* hydrate store */
           setMission1({
             unlocked: data.unlockedParts,
             claimed : data.claimedParts,
           });
 
-          // 3️⃣  Prime le cache React-Query → invalider plus tard ⤵
+          /* met à jour cache React-Query pour invalidation future */
           qc.setQueryData(mission1Key, data);
+
+          /* bonus : si l’API renvoie aussi depositCents, ajuste */
+          if (typeof data.depositCents === "number") {
+            setDepositInfo({
+              has  : data.depositCents > 0,
+              cents: data.depositCents,
+            });
+          }
         }
       } catch (err) {
         console.error("❌ bootstrap error :", err);
       }
     })();
-  }, [token, apiURL, setDepositInfo, setMission1, qc]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, apiURL]);  // setters et qc sont stables
 };
