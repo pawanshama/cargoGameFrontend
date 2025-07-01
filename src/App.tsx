@@ -31,6 +31,7 @@ import { UserProvider, useUser } from "./Component/context/UserContext";
 import { WalletProvider }        from "./Component/context/WalletContext";
 import useBackgroundMusic        from "./hooks/useBackgroundMusic";
 import { useBootstrapUser }      from "./hooks/useBootstrapUser";
+import  useMission1Query         from "./hooks/useMission1Query";
 
 /* ---------- React Query ---------- */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -154,6 +155,10 @@ function AppRoutes() {
 function App() {
   useBackgroundMusic("/assets/sounds/21Musichome.mp3", 0.1);
   useBootstrapUser();        // pré-fetch global (dépôt + Mission 1)
+  useMission1Query({         // 👉 reste « silencieux » ; refetch après invalidation
+  enabled   : true,        //   (on peut omettre, true par défaut)
+  staleTime : 60_000,      //   1 min avant de juger « périmé »
+});
 
   return (
     <QueryClientProvider client={queryClient}>
