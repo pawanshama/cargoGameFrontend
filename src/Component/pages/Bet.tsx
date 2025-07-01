@@ -109,6 +109,7 @@ if (tg) {
           setGameUrl(null);
           setMatchResult(null);
           setIsLoading(false);
+          invalidateMission1();
           break;
 
         case "PERFECT_HIT":
@@ -132,7 +133,7 @@ if (tg) {
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, []);
+  }, [invalidateMission1]);
 
   /* 3. Select radio */
   const handleRadioChange = (id: string) => {
@@ -179,6 +180,7 @@ if (tg) {
     } catch (err) {
       console.error(err);
       setIsLoading(false);
+      
     }
   }, [isLoading, amount, playBetSound, invalidateMission1]);
 
