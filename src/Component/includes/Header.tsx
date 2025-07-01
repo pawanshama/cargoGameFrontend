@@ -56,7 +56,7 @@ const Header: React.FC<HeaderProps> = ({ pageHeading, refreshTrigger }) => {
     if (!initData) return;
 
     try {
-      await axios.get("https://corgi-in-space-backend-production.up.railway.app/api/notifications/all", {
+      await axios.get("https://ae0e-2402-e280-230d-3ff-945-fd4e-1470-53f8.ngrok-free.app/api/notifications/all", {
         headers: { Authorization: `tma ${initData}` },
       });
 
@@ -81,7 +81,7 @@ const Header: React.FC<HeaderProps> = ({ pageHeading, refreshTrigger }) => {
       const initData = window.Telegram?.WebApp?.initData;
       if (!initData) return;
 
-      const res = await axios.get("https://corgi-in-space-backend-production.up.railway.app/api/wallet/me", {
+      const res = await axios.get("https://ae0e-2402-e280-230d-3ff-945-fd4e-1470-53f8.ngrok-free.app/api/wallet/me", {
         headers: {
           Authorization: `tma ${initData}`,
         },
@@ -114,7 +114,7 @@ const Header: React.FC<HeaderProps> = ({ pageHeading, refreshTrigger }) => {
         const initData = window.Telegram?.WebApp?.initData;
         if (!initData) return;
 
-        const res = await axios.get("https://corgi-in-space-backend-production.up.railway.app/api/notifications/unread-count", {
+        const res = await axios.get("https://ae0e-2402-e280-230d-3ff-945-fd4e-1470-53f8.ngrok-free.app/api/notifications/unread-count", {
           headers: {
             Authorization: `tma ${initData}`,
           },
@@ -138,7 +138,7 @@ const Header: React.FC<HeaderProps> = ({ pageHeading, refreshTrigger }) => {
     if (!initData) return;
 
     const source = new EventSource(
-      `https://corgi-in-space-backend-production.up.railway.app/api/notifications/stream?initData=${encodeURIComponent(initData)}`
+      `https://ae0e-2402-e280-230d-3ff-945-fd4e-1470-53f8.ngrok-free.app/api/notifications/stream?initData=${encodeURIComponent(initData)}`
     );
 
     source.onmessage = (event) => {

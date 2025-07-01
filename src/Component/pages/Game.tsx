@@ -14,7 +14,7 @@ type GameProps = {
   onResolved: (result: any) => void;
 };
 
-const BACKEND = "https://corgi-in-space-backend-production.up.railway.app";
+const BACKEND = "https://ae0e-2402-e280-230d-3ff-945-fd4e-1470-53f8.ngrok-free.app";
 
 const Game = ({ matchId, surplusPoolId, isAlone, onResolved }: GameProps) => {
   useEffect(() => {
