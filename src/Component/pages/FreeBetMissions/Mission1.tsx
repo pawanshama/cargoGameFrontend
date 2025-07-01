@@ -1,16 +1,23 @@
 /* ------------------------------------------------------------------
    src/Component/pages/FreeBetMissions/Mission1.tsx
------------------------------------------------------------------- */
-import { useMemo } from "react";
-import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
-import Mission1AfterDeposit  from "./Mission1AfterDeposit";
-import { useUserGame }       from "../../../store/useUserGame";
-import useMission1           from "../../../hooks/useMission1";
+   ------------------------------------------------------------------ */
 
-/*────────── Props ──────────*/
+import { useEffect, useState, useCallback } from "react";
+
+import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
+import Mission1AfterDeposit from "./Mission1AfterDeposit";
+import { useUserGame } from "../../../store/useUserGame";
+
+/*────────── Types ──────────*/
+interface Mission1StatusPayload {
+  unlockedParts: number;
+  claimedParts: number;
+  depositCents: number;
+}
+
 interface Mission1Props {
-  onBack   : () => void;
-  onCollect?: () => void;
+  onBack: () => void;
+  onCollect?: () => void; // pop‑up succès
 }
 
 /*───────────────────────────────────────────────────────────*/
@@ -19,56 +26,92 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
   const {
     hasDeposited,
     depositCents,
-    mission1,
     setDepositInfo,
     setMission1,
   } = useUserGame();
 
-  /* --------- Telegram token --------- */
-  const token = window.Telegram?.WebApp?.initData || "";
+  /* --------- loader local --------- */
+  const [loading, setLoading] = useState(hasDeposited === undefined);
 
-  /* --------- React-Query fetch --------- */
-  const { isLoading } = useMission1({
-    enabled: !!token,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: false,
-    staleTime: 0,
-    /* Hydrate le cache avec les données du store pour éviter un flash */
-    initialData: useMemo(() => {
-      if (
-        mission1 &&
-        depositCents !== undefined
-      ) {
-        return {
-          depositCents,
-          unlockedParts: mission1.unlockedParts,
-          claimedParts : mission1.claimedParts,
-        };
-      }
-      return undefined;
-    }, [mission1, depositCents]),
-    onSuccess: (d) => {
+  /* --------- helpers --------- */
+  const tg = window.Telegram?.WebApp;
+  const token = tg?.initData || "";
+  const apiURL = import.meta.env.VITE_BACKEND_URL;
+
+  /* =================== helpers API =================== */
+  const fetchMissionStatus = useCallback(async () => {
+    if (!token) return;
+    try {
+      const r = await fetch(`${apiURL}/api/mission1/status`, {
+        headers: { Authorization: `tma ${token}` },
+      });
+      if (!r.ok) return;
+
+      const { data } = await r.json();
+      const d = data as Mission1StatusPayload;
+
+      // garde le store pour d’autres écrans
       setMission1({ unlocked: d.unlockedParts, claimed: d.claimedParts });
-      setDepositInfo({ has: d.depositCents > 0, cents: d.depositCents });
-    },
-  });
 
-  /* --------- rendu --------- */
-  const firstLoad =
-    (hasDeposited === undefined ||
-      depositCents === undefined ||
-      mission1 === undefined) && isLoading;
+      if (d.depositCents && depositCents === undefined) {
+        setDepositInfo({ has: true, cents: d.depositCents });
+      }
+    } catch {
+      /* silencieux */
+    }
+  }, [apiURL, token, depositCents, setMission1, setDepositInfo]);
 
-  if (firstLoad) {
+  /* --------- collect --------- */
+  const handleCollect = () => {
+    if (!token) return;
+    onCollect?.(); // pop‑up immédiat
+
+    fetch(`${apiURL}/api/mission1/collect`, {
+      method: "POST",
+      headers: { Authorization: `tma ${token}` },
+    })
+      .then(() => fetchMissionStatus())
+      .catch((e) => console.error("❌ /mission1/collect :", e));
+  };
+
+  /* ============ effet : dépôt + spinner ============ */
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    const load = async () => {
+      if (hasDeposited === undefined) {
+        try {
+          const r = await fetch(`${apiURL}/api/user/deposit-status`, {
+            headers: { Authorization: `tma ${token}` },
+          });
+          if (r.ok) {
+            const j = await r.json();
+            setDepositInfo({ has: j.hasDeposited, cents: j.depositAmount });
+            if (j.hasDeposited) await fetchMissionStatus();
+          }
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+        if (hasDeposited) fetchMissionStatus();
+      }
+    };
+
+    load();
+  }, [apiURL, token, hasDeposited, fetchMissionStatus, setDepositInfo]);
+
+  /* =================== rendu =================== */
+  if (loading) {
     return (
       <div className="absolute inset-0 flex items-center justify-center bg-[#160028]/90 z-50">
         <p className="text-white animate-pulse">Loading…</p>
       </div>
     );
   }
-
-  /* rafraîchissement arrière-plan : l’écran reste visible */
-  const handleCollect = () => onCollect?.();
 
   return hasDeposited && depositCents !== undefined ? (
     <Mission1AfterDeposit onBack={onBack} onCollect={handleCollect} />
