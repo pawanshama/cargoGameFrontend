@@ -1,7 +1,7 @@
 /* ------------------------------------------------------------------
    src/Component/pages/FreeBetMissions/Mission1.tsx
-   ------------------------------------------------------------------ */
-import { useMemo, useCallback } from "react";
+------------------------------------------------------------------ */
+import { useCallback } from "react";
 import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
 import Mission1AfterDeposit  from "./Mission1AfterDeposit";
 import { useUserGame }       from "../../../store/useUserGame";
@@ -16,6 +16,7 @@ interface Mission1Props {
 const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
   /* --------- store Zustand --------- */
   const {
+    hasDeposited,
     depositCents,
     mission1,
     setDepositInfo,
@@ -24,14 +25,6 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
 
   /* --------- Telegram token --------- */
   const token = window.Telegram?.WebApp?.initData || "";
-
-  /* --------- Faut-il afficher AfterDeposit ? --------- */
-  const showAfter = useMemo(() => {
-    if (depositCents && depositCents > 0) return true;
-    if (mission1 && (mission1.unlockedParts > 0 || mission1.claimedParts > 0))
-      return true;
-    return false;
-  }, [depositCents, mission1]);
 
   /* --------- Refetch silencieux à chaque ouverture --------- */
   useMission1({
@@ -53,10 +46,15 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
     },
   });
 
-  /* --------- collecte (mise à jour via refetch) --------- */
+  /* --------- collecte : refetch arrière-plan mettra à jour la barre --------- */
   const handleCollect = useCallback(() => onCollect?.(), [onCollect]);
 
-  /* --------- rendu --------- */
+  /* --------- logiques d’affichage --------- */
+  const showAfter =
+    (hasDeposited && depositCents !== undefined && depositCents > 0) ||
+    (mission1 &&
+      (mission1.unlockedParts > 0 || mission1.claimedParts > 0));
+
   return showAfter ? (
     <Mission1AfterDeposit onBack={onBack} onCollect={handleCollect} />
   ) : (
