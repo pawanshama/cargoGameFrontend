@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------
-   src/App.tsx — version avec React Query et pré-fetch Mission 1
-   ------------------------------------------------------------------ */
+   src/App.tsx — version avec React Query et pré‑fetch Mission 1 corrigée
+------------------------------------------------------------------ */
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -14,23 +14,23 @@ import axios, { AxiosError } from "axios";
 import "./App.css";
 
 /* ---------- Pages ---------- */
-import Airdrop                      from "./Component/pages/Airdrop";
-import Wallet                       from "./Component/pages/Wallet";
-import OnBoarding                   from "./Component/pages/OnBoarding";
-import FreeBetMissions              from "./Component/pages/FreeBetMissions";
-import LeaderBoard                  from "./Component/pages/LeaderBoard";
-import Bet                          from "./Component/pages/Bet";
-import Congratulations              from "./Component/pages/Congratulations";
-import CongratulationsWithScore     from "./Component/pages/CongratulationsWithScore";
-import Terms                        from "./Component/pages/Terms";
-import Privacy                      from "./Component/pages/Privacy";
+import Airdrop from "./Component/pages/Airdrop";
+import Wallet from "./Component/pages/Wallet";
+import OnBoarding from "./Component/pages/OnBoarding";
+import FreeBetMissions from "./Component/pages/FreeBetMissions";
+import LeaderBoard from "./Component/pages/LeaderBoard";
+import Bet from "./Component/pages/Bet";
+import Congratulations from "./Component/pages/Congratulations";
+import CongratulationsWithScore from "./Component/pages/CongratulationsWithScore";
+import Terms from "./Component/pages/Terms";
+import Privacy from "./Component/pages/Privacy";
 
 /* ---------- Contexte / hooks ---------- */
-import { TonConnectUIProvider }     from "@tonconnect/ui-react";
-import { UserProvider, useUser }    from "./Component/context/UserContext";
-import useBackgroundMusic           from "./hooks/useBackgroundMusic";
-import { useUserGame }              from "./store/useUserGame";
-import { WalletProvider }           from "./Component/context/WalletContext";
+import { TonConnectUIProvider } from "@tonconnect/ui-react";
+import { UserProvider, useUser } from "./Component/context/UserContext";
+import useBackgroundMusic from "./hooks/useBackgroundMusic";
+import { useUserGame } from "./store/useUserGame";
+import { WalletProvider } from "./Component/context/WalletContext";
 
 /* ---------- React Query ---------- */
 import {
@@ -38,7 +38,7 @@ import {
   QueryClientProvider,
   useQueryClient,
 } from "@tanstack/react-query";
-import { mission1Key }              from "./hooks/useMission1";
+import { mission1Key } from "./hooks/useMission1";
 
 /* ---------- Constantes ---------- */
 const queryClient = new QueryClient();
@@ -47,33 +47,35 @@ const API_BASE =
   "https://corgi-in-space-backend-production.up.railway.app";
 
 /* ========================================================================= */
-/*                               SUB-ROUTES                                  */
+/*                               SUB‑ROUTES                                  */
 /* ========================================================================= */
 
 function AppRoutes() {
-  const navigate      = useNavigate();
-  const location      = useLocation();
-  const { setUser }   = useUser();
-  const { setDepositInfo } = useUserGame();
-  const qc            = useQueryClient();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { setUser } = useUser();
+  const { setMission1, setDepositInfo } = useUserGame();
+  const qc = useQueryClient();
 
   const hasRedirected = useRef(false);
-  const didAuth       = useRef(false);
+  const didAuth = useRef(false);
   const [userReady, setUserReady] = useState(false);
 
   /* ───────────── 1. Collecte code d’invitation ───────────── */
   useEffect(() => {
-    const urlParams           = new URLSearchParams(window.location.search);
-    const inviteCodeFromURL   = urlParams.get("invite");
-    const rawStart            = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
-    const inviteCodeFromStart = rawStart?.startsWith("invite=") ? rawStart.slice(7) : null;
-    const inviteCode          = inviteCodeFromURL || inviteCodeFromStart;
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteCodeFromURL = urlParams.get("invite");
+    const rawStart = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+    const inviteCodeFromStart = rawStart?.startsWith("invite=")
+      ? rawStart.slice(7)
+      : null;
+    const inviteCode = inviteCodeFromURL || inviteCodeFromStart;
 
     if (!inviteCode) return;
 
     axios
       .get<{ inviterId: string }>(`${API_BASE}/api/invite/${inviteCode}`)
-      .then(res => {
+      .then((res) => {
         if (res.data?.inviterId) localStorage.setItem("inviterId", res.data.inviterId);
       })
       .catch((err: AxiosError | any) => {
@@ -94,11 +96,11 @@ function AppRoutes() {
 
     didAuth.current = true;
 
-    const inviterId  = localStorage.getItem("inviterId") || null;
-    const rawStart   = tg.initDataUnsafe?.start_param;
+    const inviterId = localStorage.getItem("inviterId") || null;
+    const rawStart = tg.initDataUnsafe?.start_param;
     const inviteCode = rawStart?.startsWith("invite=") ? rawStart.slice(7) : null;
 
-    /* helper pour pré-charger Mission 1 */
+    /* helper pour pré‑charger Mission 1 */
     const prefetchMission1 = async () => {
       const { data } = await axios.get(
         `${API_BASE}/api/mission1/status`,
@@ -113,18 +115,32 @@ function AppRoutes() {
         { inviterId, inviteCode },
         { headers: { Authorization: `tma ${initData}` } }
       )
-      .then(async res => {
+      .then(async (res) => {
+        /* 1️⃣ Infos utilisateur */
         setUser(res.data.userData);
+
+        /* 2️⃣ Pré‑chargement Mission 1 */
+        const mission1Data = await prefetchMission1();
+
+        /* 3️⃣ Hydratation store + cache */
+        setMission1({
+          unlocked: mission1Data.unlockedParts,
+          claimed: mission1Data.claimedParts,
+        });
+        setDepositInfo({
+          has: mission1Data.depositCents > 0,
+          cents: mission1Data.depositCents,
+        });
+        qc.setQueryData(mission1Key, mission1Data);
+
+        /* 4️⃣ Prêt ! */
         setUserReady(true);
         localStorage.removeItem("inviterId");
-
-        /* Pré-chargement Mission 1 */
-        await qc.prefetchQuery({ queryKey: mission1Key, queryFn: prefetchMission1 });
       })
       .catch((err: AxiosError | any) => {
         console.error("❌ Erreur auth Telegram :", err?.response?.data || err);
       });
-  }, [setUser, qc]);
+  }, [setUser, setMission1, setDepositInfo, qc]);
 
   /* ───────────── 3. Redirection automatique ───────────── */
   useEffect(() => {
@@ -150,7 +166,7 @@ function AppRoutes() {
     return () => window.removeEventListener("message", handler);
   }, [navigate, location.pathname]);
 
-  /* ───── 5. Pré-chargement dépôt ───── */
+  /* ───── 5. Pré‑chargement dépôt (rafraîchissement) ───── */
   useEffect(() => {
     if (!userReady) return;
     const initData = window.Telegram?.WebApp?.initData;
@@ -160,7 +176,7 @@ function AppRoutes() {
       .get(`${API_BASE}/api/user/deposit-status`, {
         headers: { Authorization: `tma ${initData}` },
       })
-      .then(r => {
+      .then((r) => {
         setDepositInfo({ has: r.data.hasDeposited, cents: r.data.depositAmount });
       })
       .catch((err: AxiosError | any) =>
@@ -171,22 +187,22 @@ function AppRoutes() {
   /* ───────────── Routes ───────────── */
   return (
     <Routes>
-      <Route path="/"                     element={<OnBoarding />} />
-      <Route path="/wallet"               element={<Wallet />} />
-      <Route path="/free-bet"             element={<FreeBetMissions />} />
-      <Route path="/top"                  element={<LeaderBoard />} />
-      <Route path="/bet"                  element={<Bet />} />
-      <Route path="/congratulations"      element={<Congratulations />} />
+      <Route path="/" element={<OnBoarding />} />
+      <Route path="/wallet" element={<Wallet />} />
+      <Route path="/free-bet" element={<FreeBetMissions />} />
+      <Route path="/top" element={<LeaderBoard />} />
+      <Route path="/bet" element={<Bet />} />
+      <Route path="/congratulations" element={<Congratulations />} />
       <Route path="/congratulations-score" element={<CongratulationsWithScore />} />
-      <Route path="/terms"                element={<Terms />} />
-      <Route path="/privacy"              element={<Privacy />} />
-      <Route path="/airdrop"              element={<Airdrop />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/airdrop" element={<Airdrop />} />
     </Routes>
   );
 }
 
 /* ========================================================================= */
-/*                                   ROOT                                    */
+/*                                   ROOT                                   */
 /* ========================================================================= */
 
 function App() {
