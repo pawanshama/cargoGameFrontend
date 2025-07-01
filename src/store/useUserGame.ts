@@ -21,7 +21,7 @@ export interface UserGameState {
 
   /* — Mutateurs — */
   setDepositInfo: (v: { has: boolean; cents: number }) => void;
-  setMission1   : (v: { unlocked: number; claimed: number }) => void;
+  setMission1   : (v: Mission1Progress) => void;
   reset         : () => void;
 }
 
@@ -46,10 +46,8 @@ export const useUserGame = create<UserGameState>()(
       setDepositInfo: ({ has, cents }) =>
         set({ hasDeposited: has, depositCents: cents }),
 
-      setMission1: ({ unlocked, claimed }) =>
-        set({
-          mission1: { unlockedParts: unlocked, claimedParts: claimed },
-        }),
+      setMission1: (progress) =>
+        set({ mission1: progress }),
 
       reset: () => set(initialState, true),   // remplace tout l’état
     }),

@@ -43,7 +43,10 @@ export default function useMission1Query(
           d.unlockedParts,
         );
 
-        setMission1({ unlocked: safeUnlocked, claimed: d.claimedParts });
+        setMission1({
+          unlockedParts: safeUnlocked,
+          claimedParts : d.claimedParts,
+        });
 
         if (d.depositCents > 0) {
           setDepositInfo({ has: true, cents: d.depositCents });

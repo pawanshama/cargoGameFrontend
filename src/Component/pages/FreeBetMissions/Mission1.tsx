@@ -43,7 +43,10 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
       const { data } = await r.json();
 
       /* hydrate le store avec les nouvelles valeurs */
-      setMission1({ unlocked: data.unlockedParts, claimed: data.claimedParts });
+      setMission1({
+        unlockedParts: data.unlockedParts,
+        claimedParts : data.claimedParts,
+      });
     } catch (e) {
       console.error("❌ /mission1/collect :", e);
     }

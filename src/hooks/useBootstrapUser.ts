@@ -9,8 +9,6 @@ import { useUserGame } from "../store/useUserGame";
 import { useQueryClient } from "@tanstack/react-query";
 import { mission1Key } from "./useMission1Query";
 
-
-
 export const useBootstrapUser = () => {
   const { setDepositInfo, setMission1 } = useUserGame();
   const qc = useQueryClient();
@@ -31,7 +29,8 @@ export const useBootstrapUser = () => {
         if (!depRes.ok) return;
         const dep = await depRes.json();   // { hasDeposited, depositAmount }
 
-        const hasDeposit = dep.depositAmount > 0 || dep.hasDeposited === true;
+        const hasDeposit =
+          dep.depositAmount > 0 || dep.hasDeposited === true;
 
         /* hydrate store */
         setDepositInfo({ has: hasDeposit, cents: dep.depositAmount });
@@ -47,8 +46,8 @@ export const useBootstrapUser = () => {
 
           /* hydrate store */
           setMission1({
-            unlocked: data.unlockedParts,
-            claimed : data.claimedParts,
+            unlockedParts: data.unlockedParts,
+            claimedParts : data.claimedParts,
           });
 
           /* met à jour cache React-Query pour invalidation future */
@@ -66,6 +65,6 @@ export const useBootstrapUser = () => {
         console.error("❌ bootstrap error :", err);
       }
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, apiURL]);  // setters et qc sont stables
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, apiURL]); // setters et qc sont stables
 };
