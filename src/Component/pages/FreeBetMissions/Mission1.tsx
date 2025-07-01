@@ -1,34 +1,40 @@
 /* ------------------------------------------------------------------
    src/Component/pages/FreeBetMissions/Mission1.tsx
-   ------------------------------------------------------------------ */
+------------------------------------------------------------------ */
 
+import { useUserGame }       from "../../../store/useUserGame";
 import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
 import Mission1AfterDeposit  from "./Mission1AfterDeposit";
-import { useUserGame }       from "../../../store/useUserGame";
 
-/*────────── Props ──────────*/
 interface Mission1Props {
   onBack   : () => void;
-  onCollect?: () => void;           // pop-up succès
+  onCollect?: () => void;
 }
 
-/*───────────────────────────────────────────────────────────*/
 const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
-  /* --------- store global --------- */
   const {
     hasDeposited,
     depositCents,
-    setMission1,                       // pour mise à jour après collect
+    setMission1,
   } = useUserGame();
 
-  /* --------- collect (seul appel réseau restant) --------- */
+  /* 1️⃣  Encore en cours de bootstrap → petit spinner */
+  if (hasDeposited === undefined) {
+    return (
+      <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#160028]/90">
+        <p className="text-white animate-pulse">Loading…</p>
+      </div>
+    );
+  }
+
+  /* 2️⃣  Collect reste inchangé */
   const tg     = window.Telegram?.WebApp;
   const token  = tg?.initData || "";
   const apiURL = import.meta.env.VITE_BACKEND_URL;
 
   const handleCollect = async () => {
     if (!token) return;
-    onCollect?.();                     // ouvre le pop-up tout de suite
+    onCollect?.();
 
     try {
       const r = await fetch(`${apiURL}/api/mission1/collect`, {
@@ -36,19 +42,14 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
         headers: { Authorization: `tma ${token}` },
       });
       if (!r.ok) return;
-
-      /* Le backend renvoie l’état mis à jour de la mission */
       const { data } = await r.json();
-      setMission1({
-        unlocked: data.unlockedParts,
-        claimed : data.claimedParts,
-      });
+      setMission1({ unlocked: data.unlockedParts, claimed: data.claimedParts });
     } catch (e) {
       console.error("❌ /mission1/collect :", e);
     }
   };
 
-  /* --------- rendu --------- */
+  /* 3️⃣  Rendu normal */
   return hasDeposited && depositCents !== undefined ? (
     <Mission1AfterDeposit onBack={onBack} onCollect={handleCollect} />
   ) : (
