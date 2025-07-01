@@ -23,7 +23,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       const { data } = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/wallet/me`,
-        { headers: { Authorization: `tma ${initData}` } },
+        { headers: { Authorization: `tma ${initData}`, "Accept": "application/json" } },
       );
       setWallet(data.wallet);
     } catch (e) {

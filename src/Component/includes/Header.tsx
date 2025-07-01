@@ -79,7 +79,7 @@ const Header: React.FC<HeaderProps> = ({ pageHeading }) => {
     try {
       await axios.get(
         "https://ae0e-2402-e280-230d-3ff-945-fd4e-1470-53f8.ngrok-free.app/api/notifications/all",
-        { headers: { Authorization: `tma ${initData}` } },
+        { headers: { Authorization: `tma ${initData}`, "Accept": "application/json" }, },
       );
       setUnreadCount(0);
     } catch (err) {
@@ -98,7 +98,7 @@ const Header: React.FC<HeaderProps> = ({ pageHeading }) => {
       try {
         const { data } = await axios.get(
           "https://ae0e-2402-e280-230d-3ff-945-fd4e-1470-53f8.ngrok-free.app/api/notifications/unread-count",
-          { headers: { Authorization: `tma ${initData}` } },
+          { headers: { Authorization: `tma ${initData}`, "Accept": "application/json" } },
         );
         setUnreadCount(data.count || 0);
       } catch (e) {
