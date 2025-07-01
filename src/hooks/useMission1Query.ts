@@ -32,7 +32,9 @@ export default function useMission1Query(
       staleTime: 60_000,
       onSuccess: (d) => {
         setMission1({ unlocked: d.unlockedParts, claimed: d.claimedParts });
-        setDepositInfo({ has: d.depositCents > 0, cents: d.depositCents });
+         if (d.depositCents > 0) {
+   setDepositInfo({ has: true, cents: d.depositCents });
+ }
       },
       retry: false,
       ...options,
