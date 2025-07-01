@@ -8,7 +8,7 @@ import Mission1AfterDeposit  from "./Mission1AfterDeposit";
 
 interface Mission1Props {
   onBack   : () => void;
-  onCollect?: () => void;
+  onCollect?: () => void; // pop-up succès
 }
 
 const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
@@ -18,7 +18,7 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
     setMission1,
   } = useUserGame();
 
-  /* 1️⃣  Encore en cours de bootstrap → petit spinner */
+  /* 0. Tant que le bootstrap n’a pas rempli le store → mini-loader */
   if (hasDeposited === undefined) {
     return (
       <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#160028]/90">
@@ -27,15 +27,13 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
     );
   }
 
-  /* 2️⃣  Collect reste inchangé */
-  const tg     = window.Telegram?.WebApp;
-  const token  = tg?.initData || "";
-  const apiURL = import.meta.env.VITE_BACKEND_URL;
-
+  /* 1. Collect (POST /mission1/collect) */
   const handleCollect = async () => {
+    const token  = window.Telegram?.WebApp?.initData;
+    const apiURL = import.meta.env.VITE_BACKEND_URL;
     if (!token) return;
-    onCollect?.();
 
+    onCollect?.();                                   // pop-up immédiat
     try {
       const r = await fetch(`${apiURL}/api/mission1/collect`, {
         method : "POST",
@@ -43,13 +41,15 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
       });
       if (!r.ok) return;
       const { data } = await r.json();
+
+      /* hydrate le store avec les nouvelles valeurs */
       setMission1({ unlocked: data.unlockedParts, claimed: data.claimedParts });
     } catch (e) {
       console.error("❌ /mission1/collect :", e);
     }
   };
 
-  /* 3️⃣  Rendu normal */
+  /* 2. Rendu */
   return hasDeposited && depositCents !== undefined ? (
     <Mission1AfterDeposit onBack={onBack} onCollect={handleCollect} />
   ) : (
