@@ -3,22 +3,21 @@
    ------------------------------------------------------------------ */
 
 import { useEffect, useState, useCallback } from "react";
-import { io, Socket } from "socket.io-client";
 
 import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
-import Mission1AfterDeposit  from "./Mission1AfterDeposit";
-import { useUserGame }       from "../../../store/useUserGame";
+import Mission1AfterDeposit from "./Mission1AfterDeposit";
+import { useUserGame } from "../../../store/useUserGame";
 
 /*────────── Types ──────────*/
 interface Mission1StatusPayload {
-  unlockedParts : number;
-  claimedParts  : number;
-  depositCents  : number;
+  unlockedParts: number;
+  claimedParts: number;
+  depositCents: number;
 }
 
 interface Mission1Props {
-  onBack   : () => void;
-  onCollect?: () => void;              // ouvre le pop-up succès
+  onBack: () => void;
+  onCollect?: () => void; // pop‑up succès
 }
 
 /*───────────────────────────────────────────────────────────*/
@@ -27,36 +26,31 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
   const {
     hasDeposited,
     depositCents,
-    mission1,
     setDepositInfo,
     setMission1,
   } = useUserGame();
 
-  /* --------- dérivés --------- */
-  const unlocked = mission1?.unlockedParts ?? 0;
-  const claimed  = mission1?.claimedParts  ?? 0;
-
-  /* --------- loader --------- */
+  /* --------- loader local --------- */
   const [loading, setLoading] = useState(hasDeposited === undefined);
 
   /* --------- helpers --------- */
-  const tg     = window.Telegram?.WebApp;
-  const token  = tg?.initData || "";
+  const tg = window.Telegram?.WebApp;
+  const token = tg?.initData || "";
   const apiURL = import.meta.env.VITE_BACKEND_URL;
 
   /* =================== helpers API =================== */
   const fetchMissionStatus = useCallback(async () => {
     if (!token) return;
     try {
-      const r = await fetch(
-        `${apiURL}/api/mission1/status`,
-        { headers: { Authorization: `tma ${token}` } },
-      );
+      const r = await fetch(`${apiURL}/api/mission1/status`, {
+        headers: { Authorization: `tma ${token}` },
+      });
       if (!r.ok) return;
 
       const { data } = await r.json();
       const d = data as Mission1StatusPayload;
 
+      // garde le store pour d’autres écrans
       setMission1({ unlocked: d.unlockedParts, claimed: d.claimedParts });
 
       if (d.depositCents && depositCents === undefined) {
@@ -67,31 +61,32 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
     }
   }, [apiURL, token, depositCents, setMission1, setDepositInfo]);
 
+  /* --------- collect --------- */
   const handleCollect = () => {
     if (!token) return;
-
-    onCollect?.();   // pop-up immédiat
+    onCollect?.(); // pop‑up immédiat
 
     fetch(`${apiURL}/api/mission1/collect`, {
-      method : "POST",
+      method: "POST",
       headers: { Authorization: `tma ${token}` },
     })
       .then(() => fetchMissionStatus())
       .catch((e) => console.error("❌ /mission1/collect :", e));
   };
 
-  /* ============ effet 1 : dépôt + spinner ============ */
+  /* ============ effet : dépôt + spinner ============ */
   useEffect(() => {
-    const uid = (tg?.initDataUnsafe as any)?.user?.id as number | undefined;
-    if (!token || !uid) { setLoading(false); return; }
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
-    if (hasDeposited === undefined) {
-      (async () => {
+    const load = async () => {
+      if (hasDeposited === undefined) {
         try {
-          const r = await fetch(
-            `${apiURL}/api/user/deposit-status`,
-            { headers: { Authorization: `tma ${token}` } },
-          );
+          const r = await fetch(`${apiURL}/api/user/deposit-status`, {
+            headers: { Authorization: `tma ${token}` },
+          });
           if (r.ok) {
             const j = await r.json();
             setDepositInfo({ has: j.hasDeposited, cents: j.depositAmount });
@@ -100,31 +95,14 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
         } finally {
           setLoading(false);
         }
-      })();
-    } else {
-      setLoading(false);
-      if (hasDeposited) fetchMissionStatus();
-    }
+      } else {
+        setLoading(false);
+        if (hasDeposited) fetchMissionStatus();
+      }
+    };
+
+    load();
   }, [apiURL, token, hasDeposited, fetchMissionStatus, setDepositInfo]);
-
-  /* ============ effet 2 : WebSocket premier dépôt ============ */
-  useEffect(() => {
-    const uid = (tg?.initDataUnsafe as any)?.user?.id as number | undefined;
-    if (!token || !uid) return;
-
-    const socket: Socket = io(apiURL, {
-      query     : { telegramId: String(uid) },
-      transports: ["websocket"],
-    });
-
-    socket.on("first-deposit", async (p: { amount: number }) => {
-      setDepositInfo({ has: true, cents: p.amount });
-      await fetchMissionStatus();
-    });
-
-    /* cleanup : retourne void  */
-    return () => { socket.disconnect(); };
-  }, [apiURL, token, fetchMissionStatus, setDepositInfo]);
 
   /* =================== rendu =================== */
   if (loading) {
@@ -136,13 +114,7 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
   }
 
   return hasDeposited && depositCents !== undefined ? (
-    <Mission1AfterDeposit
-      onBack={onBack}
-      onCollect={handleCollect}
-      depositAmount={depositCents}
-      unlockedParts={unlocked}
-      claimedParts={claimed}
-    />
+    <Mission1AfterDeposit onBack={onBack} onCollect={handleCollect} />
   ) : (
     <Mission1BeforeDeposit onBack={onBack} />
   );
