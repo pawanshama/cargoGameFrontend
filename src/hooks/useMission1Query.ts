@@ -28,6 +28,7 @@ export default function useMission1Query(
         `${import.meta.env.VITE_BACKEND_URL}/api/mission1/status`,
         { headers: { Authorization: `tma ${token}` } },
       );
+      console.log("[/mission1/status]", data);
       return data;
     },
     {
