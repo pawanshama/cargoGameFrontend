@@ -15,29 +15,42 @@ export default function useMission1Query(
   options?: Omit<
     UseQueryOptions<Mission1Status, Error, Mission1Status>,
     "queryKey" | "queryFn"
-  >
+  >,
 ) {
-  const { setMission1, setDepositInfo } = useUserGame();
+  /* accès au store Zustand */
+  const { setMission1, setDepositInfo, mission1 } = useUserGame();
+
   return useQuery<Mission1Status, Error, Mission1Status>(
     mission1Key,
     async () => {
       const token = window.Telegram?.WebApp?.initData || "";
       const { data } = await axios.get<Mission1Status>(
         `${import.meta.env.VITE_BACKEND_URL}/api/mission1/status`,
-        { headers: { Authorization: `tma ${token}` } }
+        { headers: { Authorization: `tma ${token}` } },
       );
       return data;
     },
     {
-      staleTime: 60_000,
+      /* rafraîchit automatiquement au bout de 5 s (fallback) */
+      staleTime: 5_000,
+
+      /* succès : hydrate le store en empêchant le rollback */
       onSuccess: (d) => {
-        setMission1({ unlocked: d.unlockedParts, claimed: d.claimedParts });
-         if (d.depositCents > 0) {
-   setDepositInfo({ has: true, cents: d.depositCents });
- }
+        // 🔒 verrou anti-rollback : ne jamais diminuer unlockedParts
+        const safeUnlocked = Math.max(
+          mission1?.unlockedParts ?? 0,
+          d.unlockedParts,
+        );
+
+        setMission1({ unlocked: safeUnlocked, claimed: d.claimedParts });
+
+        if (d.depositCents > 0) {
+          setDepositInfo({ has: true, cents: d.depositCents });
+        }
       },
+
       retry: false,
       ...options,
-    }
+    },
   );
 }

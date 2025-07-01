@@ -175,7 +175,7 @@ if (tg) {
       setGameUrl(url.toString());
       setShowGame(true);
 
-      invalidateMission1(); // refetch instantané /mission1/status
+      setTimeout(invalidateMission1, 1_000);// refetch instantané /mission1/status
 
     } catch (err) {
       console.error(err);
