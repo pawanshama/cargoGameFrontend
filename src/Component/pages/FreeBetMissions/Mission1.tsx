@@ -1,10 +1,11 @@
 /* ------------------------------------------------------------------
-   src/Component/pages/FreeBetMissions/Mission1.tsx — version corrigée
+   src/Component/pages/FreeBetMissions/Mission1.tsx — version “instant + refetch”
 ------------------------------------------------------------------ */
 import { useEffect, useCallback } from "react";
 import Mission1BeforeDeposit from "./Mission1BeforeDeposit";
 import Mission1AfterDeposit  from "./Mission1AfterDeposit";
 import { useUserGame }       from "../../../store/useUserGame";
+import useMission1           from "../../../hooks/useMission1";
 
 /*────────── Types backend ──────────*/
 interface Mission1StatusPayload {
@@ -25,7 +26,7 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
   const {
     hasDeposited,
     depositCents,
-    mission1,            // { unlocked, claimed } | undefined
+    mission1,
     setDepositInfo,
     setMission1,
   } = useUserGame();
@@ -38,27 +39,19 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
   /* =================== helpers API =================== */
   const fetchMissionStatus = useCallback(async () => {
     if (!token) return;
-    try {
-      const r = await fetch(`${apiURL}/api/mission1/status`, {
-        headers: { Authorization: `tma ${token}` },
-      });
-      if (!r.ok) return;
-
-      const { data } = (await r.json()) as { data: Mission1StatusPayload };
-
-      // hydrate le store pour tous les écrans
-      setMission1({ unlocked: data.unlockedParts, claimed: data.claimedParts });
-      setDepositInfo({ has: data.depositCents > 0, cents: data.depositCents });
-    } catch {
-      /* silencieux */
-    }
+    const r = await fetch(`${apiURL}/api/mission1/status`, {
+      headers: { Authorization: `tma ${token}` },
+    });
+    if (!r.ok) return;
+    const { data } = (await r.json()) as { data: Mission1StatusPayload };
+    setMission1({ unlocked: data.unlockedParts, claimed: data.claimedParts });
+    setDepositInfo({ has: data.depositCents > 0, cents: data.depositCents });
   }, [apiURL, token, setMission1, setDepositInfo]);
 
   /* --------- collect --------- */
   const handleCollect = () => {
     if (!token) return;
-    onCollect?.(); // pop-up immédiat
-
+    onCollect?.(); // feedback immédiat
     fetch(`${apiURL}/api/mission1/collect`, {
       method: "POST",
       headers: { Authorization: `tma ${token}` },
@@ -67,7 +60,20 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
       .catch((e) => console.error("❌ /mission1/collect :", e));
   };
 
-  /* ============ effet : hydrate le store si vide ============ */
+  /* --------------------------------------------------------------------
+     1️⃣  Refetch systématique à chaque montage (hydratation en arrière-plan)
+     -------------------------------------------------------------------- */
+  useMission1({
+    enabled: !!token,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
+    staleTime: 0,
+  });
+
+  /* --------------------------------------------------------------------
+     2️⃣  Hydrate le store une toute première fois si vide (évite fetch
+         inutile quand déjà présent grâce au pre-fetch dans App.tsx)
+     -------------------------------------------------------------------- */
   const needInit =
     token &&
     (hasDeposited === undefined ||
@@ -77,9 +83,8 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
   useEffect(() => {
     if (!needInit) return;
 
-    const load = async () => {
+    (async () => {
       try {
-        // 1️⃣ statut dépôt
         const r = await fetch(`${apiURL}/api/user/deposit-status`, {
           headers: { Authorization: `tma ${token}` },
         });
@@ -91,9 +96,7 @@ const Mission1: React.FC<Mission1Props> = ({ onBack, onCollect }) => {
       } catch (e) {
         console.error("❌ /deposit-status :", e);
       }
-    };
-
-    load();
+    })();
   }, [needInit, apiURL, token, fetchMissionStatus, setDepositInfo]);
 
   /* --------- rendu --------- */
