@@ -1,6 +1,10 @@
 // src/Component/context/WalletContext.tsx
 import {
-  createContext, useCallback, useContext, useEffect, useState,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
 } from "react";
 import axios from "axios";
 
@@ -14,7 +18,9 @@ interface WalletCtx {
 
 const Ctx = createContext<WalletCtx | undefined>(undefined);
 
-export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [wallet, setWallet] = useState<Wallet | null>(null);
 
   const fetchWallet = useCallback(async () => {
@@ -24,7 +30,13 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       const { data } = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/wallet/me`,
-        { headers: { Authorization: `tma ${initData}`, "Accept": "application/json" } },
+        {
+          headers: {
+            Authorization: `tma ${initData}`,
+            Accept: "application/json",
+          },
+          withCredentials: true,
+        }
       );
       setWallet(data.wallet);
     } catch (e) {
@@ -35,7 +47,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   /* mount + polling court */
   useEffect(() => {
     fetchWallet();
-    const id = setInterval(fetchWallet, 5_000);   // ⏱️ 5 s
+    const id = setInterval(fetchWallet, 5_000); // ⏱️ 5 s
     return () => clearInterval(id);
   }, [fetchWallet]);
 

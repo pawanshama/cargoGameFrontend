@@ -26,6 +26,7 @@ const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, setIsOpen
         headers: {
           Authorization: `tma ${initData}`,
         },
+        withCredentials: true
       })
       .then((res) => {
         setNotifications(res.data.notifications || []);
