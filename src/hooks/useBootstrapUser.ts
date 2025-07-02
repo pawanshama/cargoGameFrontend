@@ -72,3 +72,4 @@ export const useBootstrapUser = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, apiURL]); // setters et qc sont stables
 };
+//
