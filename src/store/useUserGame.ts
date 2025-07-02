@@ -27,9 +27,9 @@ export interface UserGameState {
 
 /* ---------- État initial (utile pour reset) ---------- */
 const initialState: UserGameState = {
-  hasDeposited : undefined,
-  depositCents : undefined,
-  mission1     : undefined,
+  hasDeposited  : undefined,
+  depositCents  : undefined,
+  mission1      : undefined,
   setDepositInfo: () => {},
   setMission1   : () => {},
   reset         : () => {},
@@ -52,13 +52,23 @@ export const useUserGame = create<UserGameState>()(
       reset: () => set(initialState, true),   // remplace tout l’état
     }),
     {
-      name: "user-game",             // clé localStorage
+      name   : "user-game", // clé localStorage
+      version: 2,           // ← bump de version pour forcer la migration
+
+      /* garde uniquement les infos utiles */
       partialize: (state) => ({
         hasDeposited : state.hasDeposited,
         depositCents : state.depositCents,
         mission1     : state.mission1,
       }),
-      version: 1,
-    }
-  )
+
+      /* migration : si on vient d’une version antérieure, on réinitialise mission1 */
+      migrate: (state: any, version) => {
+        if (version < 2) {
+          return { ...state, mission1: undefined };
+        }
+        return state;
+      },
+    },
+  ),
 );

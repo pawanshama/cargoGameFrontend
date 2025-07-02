@@ -18,7 +18,7 @@ export default function useMission1Query(
   >,
 ) {
   /* accès au store Zustand */
-  const { setMission1, setDepositInfo, mission1 } = useUserGame();
+  const { setMission1, setDepositInfo } = useUserGame();
 
   return useQuery<Mission1Status, Error, Mission1Status>(
     mission1Key,
@@ -35,16 +35,10 @@ export default function useMission1Query(
       /* rafraîchit automatiquement au bout de 5 s (fallback) */
       staleTime: 5_000,
 
-      /* succès : hydrate le store en empêchant le rollback */
+      /* succès : hydrate le store sans verrou anti-rollback */
       onSuccess: (d) => {
-        // 🔒 verrou anti-rollback : ne jamais diminuer unlockedParts
-        const safeUnlocked = Math.max(
-          mission1?.unlockedParts ?? 0,
-          d.unlockedParts,
-        );
-
         setMission1({
-          unlockedParts: safeUnlocked,
+          unlockedParts: d.unlockedParts,
           claimedParts : d.claimedParts,
         });
 
