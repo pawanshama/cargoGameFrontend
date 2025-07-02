@@ -23,6 +23,7 @@ import useTelegramSafeSound from "../../hooks/useTelegramSafeSound";
 import MatchResult from "./MatchResult";
 import { motion } from "framer-motion";
 import useInvalidateMission1 from "../../hooks/useInvalidateMission1";
+import useMission1Query from "../../hooks/useMission1Query";
 
 
 
@@ -39,6 +40,7 @@ const PotentialWinnings = memo(
 
 /* ---------- Component ---------- */
 const Bet: React.FC = () => {
+  useMission1Query({ refetchInterval: 5_000, staleTime: 0 });
   /* state */
   const [pageReady, setPageReady]         = useState(false); // évite le flash
   const [matchResult, setMatchResult]     = useState<null | {
@@ -110,7 +112,10 @@ if (tg) {
           setMatchResult(null);
           setIsLoading(false);
           invalidateMission1();
+          setTimeout(invalidateMission1, 3_000);  // 2ᵉ refetch de secours
+
           break;
+          
 
         case "PERFECT_HIT":
           // HAPTIC : top-frame déclenche la vibration pour le mobile
