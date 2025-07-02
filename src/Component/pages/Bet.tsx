@@ -320,7 +320,7 @@ if (showGame && gameUrl) {
                   type="range"
                   min="1"
                   max="10"
-                  step="0.1"
+                  step="1"
                   value={multiplier}
                   onChange={(e) => {
                     const v = parseFloat(e.target.value);
@@ -338,7 +338,7 @@ if (showGame && gameUrl) {
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="absolute -top-7 -translate-x-1/2 px-2 py-1 bg-white text-black text-xs font-bold rounded pointer-events-none"
-                    style={{ left: `calc(${tooltipX}% - 8px)` }}
+                    style={{ left: `${tooltipX / 10}%`, transform: 'translateX(-50%)' }}
                   >
                     x{multiplier.toFixed(1)}
                   </motion.div>

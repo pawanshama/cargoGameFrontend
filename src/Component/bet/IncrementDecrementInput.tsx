@@ -16,11 +16,15 @@ const IncrementDecrementInput: React.FC<IncrementDecrementInputProps> = ({
   const [value, setValue] = useState(0);
   const [isIncrementPressed, setIsIncrementPressed] = useState(false);
   const [isDecrementPressed, setIsDecrementPressed] = useState(false);
-  const [pressedSuggestion, setPressedSuggestion] = useState<number | null>(null);
+  const [pressedSuggestion, setPressedSuggestion] = useState<number | null>(
+    null
+  );
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   const playIncrementSound = useTelegramSafeSound("/assets/sounds/2+UPbet.mp3");
-  const playDecrementSound = useTelegramSafeSound("/assets/sounds/1-LESSbet.mp3");
+  const playDecrementSound = useTelegramSafeSound(
+    "/assets/sounds/1-LESSbet.mp3"
+  );
 
   const increment = () => {
     console.log("[Increment] +0.1");
@@ -39,7 +43,9 @@ const IncrementDecrementInput: React.FC<IncrementDecrementInputProps> = ({
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = parseFloat(e.target.value.replace('$', '').replace(',', '.'));
+    const newValue = parseFloat(
+      e.target.value.replace("$", "").replace(",", ".")
+    );
     console.log("[Input] Changed to", newValue);
     setValue(isNaN(newValue) ? 0 : newValue);
   };
@@ -120,11 +126,8 @@ const IncrementDecrementInput: React.FC<IncrementDecrementInputProps> = ({
             key={`suggestion-${suggestion}`}
             onClick={() => handleSuggestionClick(suggestion)}
             className={`w-[80px] h-[42px] px-2 shadow-[0px_2px_2px_0px_rgba(0,0,0,0.45)_inset] border border-secondary bg-gradient-to-b from-[#9752B8] to-[#613693] text-white rounded-2xl buttonFont text-base flex items-center justify-center transition-transform duration-100 will-change-transform ${
-  pressedSuggestion === suggestion ? "scale-90" : "scale-100"
-}`}
-
-
-
+              pressedSuggestion === suggestion ? "scale-90" : "scale-100"
+            }`}
           >
             {formatCurrency(suggestion)}
           </button>
