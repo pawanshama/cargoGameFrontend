@@ -22,6 +22,10 @@ import ImgWithFallback from "../common/ImageWithFallback";
 import useTelegramSafeSound from "../../hooks/useTelegramSafeSound";
 import MatchResult from "./MatchResult";
 import { motion } from "framer-motion";
+import useInvalidateMission1 from "../../hooks/useInvalidateMission1";
+import useMission1Query from "../../hooks/useMission1Query";
+
+
 
 
 /* ---------- Helpers ---------- */
@@ -36,6 +40,7 @@ const PotentialWinnings = memo(
 
 /* ---------- Component ---------- */
 const Bet: React.FC = () => {
+  useMission1Query({ refetchInterval: 5_000, staleTime: 0 });
   /* state */
   const [pageReady, setPageReady]         = useState(false); // évite le flash
   const [matchResult, setMatchResult]     = useState<null | {
@@ -55,6 +60,8 @@ const Bet: React.FC = () => {
   const [showTooltip, setShowTooltip]           = useState(false);
   const [tooltipX, setTooltipX]                 = useState(0);
   const [isLoading, setIsLoading]               = useState(false);
+  const invalidateMission1 = useInvalidateMission1();
+
 
   /* sounds */
   const suggestions       = useMemo(() => [1, 5, 25, 100], []);
@@ -104,7 +111,11 @@ if (tg) {
           setGameUrl(null);
           setMatchResult(null);
           setIsLoading(false);
+          invalidateMission1();
+          setTimeout(invalidateMission1, 3_000);  // 2ᵉ refetch de secours
+
           break;
+          
 
         case "PERFECT_HIT":
           // HAPTIC : top-frame déclenche la vibration pour le mobile
@@ -127,7 +138,7 @@ if (tg) {
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, []);
+  }, [invalidateMission1]);
 
   /* 3. Select radio */
   const handleRadioChange = (id: string) => {
@@ -168,11 +179,17 @@ if (tg) {
 
       setGameUrl(url.toString());
       setShowGame(true);
+
+      invalidateMission1();
+
+      setTimeout(invalidateMission1, 4_000);// refetch instantané /mission1/status
+
     } catch (err) {
       console.error(err);
       setIsLoading(false);
+      
     }
-  }, [isLoading, amount, playBetSound]);
+  }, [isLoading, amount, playBetSound, invalidateMission1]);
 
   /* 5. Match result overlay */
   if (matchResult)

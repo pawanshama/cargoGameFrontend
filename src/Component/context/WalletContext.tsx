@@ -1,3 +1,4 @@
+// src/Component/context/WalletContext.tsx
 import {
   createContext, useCallback, useContext, useEffect, useState,
 } from "react";
@@ -8,7 +9,7 @@ type Wallet = { paidcoins: number; freecoins: number };
 interface WalletCtx {
   wallet: Wallet | null;
   refreshWallet: () => Promise<void>;
-  setWallet: (w: Wallet) => void;          // MAJ instantanée après un pari
+  setWallet: (w: Wallet | ((prev: Wallet | null) => Wallet | null)) => void;
 }
 
 const Ctx = createContext<WalletCtx | undefined>(undefined);
@@ -31,10 +32,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, []);
 
-  /* un seul fetch au chargement + léger polling */
+  /* mount + polling court */
   useEffect(() => {
     fetchWallet();
-    const id = setInterval(fetchWallet, 30_000);
+    const id = setInterval(fetchWallet, 5_000);   // ⏱️ 5 s
     return () => clearInterval(id);
   }, [fetchWallet]);
 
