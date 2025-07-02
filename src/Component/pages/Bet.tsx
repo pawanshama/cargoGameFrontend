@@ -25,25 +25,24 @@ import { motion } from "framer-motion";
 import useInvalidateMission1 from "../../hooks/useInvalidateMission1";
 import useMission1Query from "../../hooks/useMission1Query";
 
-
-
-
 /* ---------- Helpers ---------- */
 const PotentialWinnings = memo(
   ({ amount, multiplier }: { amount: number; multiplier: number }) => (
     <div className="px-3 py-[0.25rem] rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 shadow-md text-white w-full max-w-[10rem] text-center min-h-[2rem]">
-      <p className="text-[0.65rem] font-medium opacity-90">Potential winnings</p>
+      <p className="text-[0.65rem] font-medium opacity-90">
+        Potential winnings
+      </p>
       <p className="text-sm font-bold">${(amount * multiplier).toFixed(2)}</p>
     </div>
-  ),
+  )
 );
 
 /* ---------- Component ---------- */
 const Bet: React.FC = () => {
   useMission1Query({ refetchInterval: 5_000, staleTime: 0 });
   /* state */
-  const [pageReady, setPageReady]         = useState(false); // évite le flash
-  const [matchResult, setMatchResult]     = useState<null | {
+  const [pageReady, setPageReady] = useState(false); // évite le flash
+  const [matchResult, setMatchResult] = useState<null | {
     result: "Won" | "Lost" | "Draw";
     userScore: number;
     opponentScore: number;
@@ -52,22 +51,25 @@ const Bet: React.FC = () => {
   }>(null);
 
   const [isStatisticsShow, setIsStatisticsShow] = useState(false);
-  const [selectedRadio, setSelectedRadio]       = useState("ton");
-  const [showGame, setShowGame]                 = useState(false);
-  const [gameUrl, setGameUrl]                   = useState<string | null>(null);
-  const [multiplier, setMultiplier]             = useState(1);
-  const [amount, setAmount]                     = useState(0.1);
-  const [showTooltip, setShowTooltip]           = useState(false);
-  const [tooltipX, setTooltipX]                 = useState(0);
-  const [isLoading, setIsLoading]               = useState(false);
+  const [selectedRadio, setSelectedRadio] = useState("ton");
+  const [showGame, setShowGame] = useState(false);
+  const [gameUrl, setGameUrl] = useState<string | null>(null);
+  const [multiplier, setMultiplier] = useState(1);
+  const [amount, setAmount] = useState(0.1);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipX, setTooltipX] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const invalidateMission1 = useInvalidateMission1();
 
-
   /* sounds */
-  const suggestions       = useMemo(() => [1, 5, 25, 100], []);
-  const playSelectRadio   = useTelegramSafeSound("/assets/sounds/13Select-Demofreeusdt.mp3");
-  const playBetSound      = useTelegramSafeSound("/assets/sounds/4Bet.mp3");
-  const playAmountSound   = useTelegramSafeSound("/assets/sounds/12Select-Amountbet.mp3");
+  const suggestions = useMemo(() => [1, 5, 25, 100], []);
+  const playSelectRadio = useTelegramSafeSound(
+    "/assets/sounds/13Select-Demofreeusdt.mp3"
+  );
+  const playBetSound = useTelegramSafeSound("/assets/sounds/4Bet.mp3");
+  const playAmountSound = useTelegramSafeSound(
+    "/assets/sounds/12Select-Amountbet.mp3"
+  );
 
   /* ------------------------------------------------------------------ */
   /* 1. Synchronisation Telegram → ready() + expand()                   */
@@ -79,14 +81,11 @@ const Bet: React.FC = () => {
       return;
     }
 
-
-if (tg) {
-  tg.ready();
-  const expanded = (tg as any).isExpanded as boolean | undefined;
-  if (!expanded) tg.expand();
-}
-
-
+    if (tg) {
+      tg.ready();
+      const expanded = (tg as any).isExpanded as boolean | undefined;
+      if (!expanded) tg.expand();
+    }
 
     const onResume = () => {
       setAmount(0);
@@ -100,9 +99,9 @@ if (tg) {
 
   /* 2. iFrame → retour au lobby */
   useEffect(() => {
-  const handler = (e: MessageEvent) => {
+    const handler = (e: MessageEvent) => {
       // Vérifie l’origine (remplace par le domaine réel du jeu)
-       if (!e.data?.action || !e.origin.endsWith("corgi-game-dist.vercel.app"))
+      if (!e.data?.action || !e.origin.endsWith("corgi-game-dist.vercel.app"))
         return;
 
       switch (e.data?.action) {
@@ -112,28 +111,29 @@ if (tg) {
           setMatchResult(null);
           setIsLoading(false);
           invalidateMission1();
-          setTimeout(invalidateMission1, 3_000);  // 2ᵉ refetch de secours
+          setTimeout(invalidateMission1, 3_000); // 2ᵉ refetch de secours
 
           break;
-          
 
         case "PERFECT_HIT":
           // HAPTIC : top-frame déclenche la vibration pour le mobile
           try {
-             const tg = window.Telegram?.WebApp;
+            const tg = window.Telegram?.WebApp;
 
- // iOS : impactOccurred fonctionne
- if (tg?.HapticFeedback?.impactOccurred?.("medium")) return;
+            // iOS : impactOccurred fonctionne
+            if (tg?.HapticFeedback?.impactOccurred?.("medium")) return;
 
- // Android : impactOccurred est muet → on bascule sur notificationOccurred
- if (tg?.HapticFeedback?.notificationOccurred?.("success")) return;
+            // Android : impactOccurred est muet → on bascule sur notificationOccurred
+            if (tg?.HapticFeedback?.notificationOccurred?.("success")) return;
 
- // Fallback navigateur (hors WebApp ou desktop)
- navigator.vibrate?.(35);
-          } catch (_) {/* silence */}
+            // Fallback navigateur (hors WebApp ou desktop)
+            navigator.vibrate?.(35);
+          } catch (_) {
+            /* silence */
+          }
           break;
         default:
-          break; 
+          break;
       }
     };
     window.addEventListener("message", handler);
@@ -160,13 +160,13 @@ if (tg) {
       const r = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/match/start`,
         {
-          method : "POST",
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization : `tma ${initData}`,
+            Authorization: `tma ${initData}`,
           },
           body: JSON.stringify({ betAmount: amount }),
-        },
+        }
       );
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
 
@@ -182,12 +182,10 @@ if (tg) {
 
       invalidateMission1();
 
-      setTimeout(invalidateMission1, 4_000);// refetch instantané /mission1/status
-
+      setTimeout(invalidateMission1, 4_000); // refetch instantané /mission1/status
     } catch (err) {
       console.error(err);
       setIsLoading(false);
-      
     }
   }, [isLoading, amount, playBetSound, invalidateMission1]);
 
@@ -204,20 +202,20 @@ if (tg) {
       />
     );
 
-/* 6. In-game iframe */
-if (showGame && gameUrl) {
-  return (
-    <div className="w-full h-[100dvh] overflow-hidden">
-      <iframe
-        src={gameUrl}
-        title="Corgi Game"
-        className="w-full h-full border-none"
-        allow="autoplay; fullscreen; vibrate"
-      /> {/* autorise navigator.vibrate */}
-    </div>
-  );
-}
-
+  /* 6. In-game iframe */
+  if (showGame && gameUrl) {
+    return (
+      <div className="w-full h-[100dvh] overflow-hidden">
+        <iframe
+          src={gameUrl}
+          title="Corgi Game"
+          className="w-full h-full border-none"
+          allow="autoplay; fullscreen; vibrate"
+        />{" "}
+        {/* autorise navigator.vibrate */}
+      </div>
+    );
+  }
 
   /* 7. — LOBBY — */
   if (!pageReady) return null; // évite flash
@@ -264,7 +262,9 @@ if (showGame && gameUrl) {
             {/* source + amount */}
             <div className="flex gap-4">
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-white mb-1">Choose your bet source</p>
+                <p className="text-sm text-white mb-1">
+                  Choose your bet source
+                </p>
                 <div className="flex gap-2">
                   <DynamicRadio
                     label="TON"
@@ -297,7 +297,7 @@ if (showGame && gameUrl) {
                   <p className="text-[0.65rem] opacity-70">Balance Available</p>
                   <p className="text-base font-extrabold">$0.00</p>
                   <p className="text-[0.6rem] opacity-60">
-                    {selectedRadio === "ton"      && "0 TON"}
+                    {selectedRadio === "ton" && "0 TON"}
                     {selectedRadio === "free-bet" && "Free Bets"}
                   </p>
                 </div>
@@ -338,7 +338,10 @@ if (showGame && gameUrl) {
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="absolute -top-7 -translate-x-1/2 px-2 py-1 bg-white text-black text-xs font-bold rounded pointer-events-none"
-                    style={{ left: `${tooltipX / 10}%`, transform: 'translateX(-50%)' }}
+                    style={{
+                      left: `${((multiplier - 1) / 9) * 100}%`,
+                      transform: "translateX(-50%)",
+                    }}
                   >
                     x{multiplier.toFixed(1)}
                   </motion.div>
