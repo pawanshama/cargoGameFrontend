@@ -38,9 +38,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 const queryClient = new QueryClient();
 
 /* ---------- Constantes ---------- */
-const API_BASE =
-  import.meta.env.VITE_BACKEND_URL ||
-  "https://e780-2402-e280-230d-3ff-f9e1-6449-ba90-46df.ngrok-free.app";
+const API_BASE = "https://e780-2402-e280-230d-3ff-f9e1-6449-ba90-46df.ngrok-free.app";
+// const API_BASE =
+//   import.meta.env.VITE_BACKEND_URL ||
+//   "https://e780-2402-e280-230d-3ff-f9e1-6449-ba90-46df.ngrok-free.app";
 
 /* ========================================================================= */
 /*                               SUB-ROUTES                                  */
