@@ -57,7 +57,7 @@ const Bet: React.FC = () => {
   const [multiplier, setMultiplier] = useState(1);
   const [amount, setAmount] = useState(0.1);
   const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipX, setTooltipX] = useState(0);
+  // const [tooltipX, setTooltipX] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const invalidateMission1 = useInvalidateMission1();
 
@@ -325,7 +325,7 @@ const Bet: React.FC = () => {
                   onChange={(e) => {
                     const v = parseFloat(e.target.value);
                     setMultiplier(v);
-                    setTooltipX(((v - 1) / 9) * 1000);
+                    // setTooltipX(((v - 1) / 9) * 1000);
                   }}
                   onMouseDown={() => setShowTooltip(true)}
                   onMouseUp={() => setShowTooltip(false)}
