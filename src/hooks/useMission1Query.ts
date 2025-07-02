@@ -1,4 +1,8 @@
 // src/hooks/useMission1Query.ts
+// ------------------------------------------------------------
+// Récupère le statut Mission 1 et met à jour le store Zustand.
+// Empêche un « rollback » en ne diminuant jamais les compteurs.
+// ------------------------------------------------------------
 import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 import axios from "axios";
 import { useUserGame } from "../store/useUserGame";
@@ -6,9 +10,9 @@ import { useUserGame } from "../store/useUserGame";
 export const mission1Key = ["mission1-status"] as const;
 
 export interface Mission1Status {
-  depositCents : number;
+  depositCents: number;
   unlockedParts: number;
-  claimedParts : number;
+  claimedParts: number;
 }
 
 export default function useMission1Query(
@@ -17,7 +21,6 @@ export default function useMission1Query(
     "queryKey" | "queryFn"
   >,
 ) {
-  /* accès au store Zustand */
   const { setMission1, setDepositInfo } = useUserGame();
 
   return useQuery<Mission1Status, Error, Mission1Status>(
@@ -32,14 +35,15 @@ export default function useMission1Query(
       return data;
     },
     {
-      /* rafraîchit automatiquement au bout de 5 s (fallback) */
+      // rafraîchit automatiquement (fallback) — peut être override via options
       staleTime: 5_000,
 
-      /* succès : hydrate le store sans verrou anti-rollback */
+      // ✅ Fusionne avec les valeurs courantes pour éviter toute régression
       onSuccess: (d) => {
+        const { mission1: prev } = useUserGame.getState();
         setMission1({
-          unlockedParts: d.unlockedParts,
-          claimedParts : d.claimedParts,
+          unlockedParts: Math.max(prev?.unlockedParts ?? 0, d.unlockedParts),
+          claimedParts : Math.max(prev?.claimedParts  ?? 0, d.claimedParts),
         });
 
         if (d.depositCents > 0) {
