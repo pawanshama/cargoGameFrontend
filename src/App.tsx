@@ -40,7 +40,7 @@ const queryClient = new QueryClient();
 /* ---------- Constantes ---------- */
 const API_BASE =
   import.meta.env.VITE_BACKEND_URL ||
-  "https://ae0e-2402-e280-230d-3ff-945-fd4e-1470-53f8.ngrok-free.app";
+  "https://e780-2402-e280-230d-3ff-f9e1-6449-ba90-46df.ngrok-free.app";
 
 /* ========================================================================= */
 /*                               SUB-ROUTES                                  */
@@ -153,7 +153,7 @@ function AppLogic() {
   useBackgroundMusic("/assets/sounds/21Musichome.mp3", 0.1);
   useBootstrapUser();                   // pré-fetch dépôt + Mission 1
   useMission1Query({ staleTime: 5_000 });
-
+  console.log("Hey I am here.")
   return (
     <Router>
       <AppRoutes />

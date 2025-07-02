@@ -78,7 +78,7 @@ const Header: React.FC<HeaderProps> = ({ pageHeading }) => {
 
     try {
       await axios.get(
-        "https://ae0e-2402-e280-230d-3ff-945-fd4e-1470-53f8.ngrok-free.app/api/notifications/all",
+        "https://e780-2402-e280-230d-3ff-f9e1-6449-ba90-46df.ngrok-free.app/api/notifications/all",
         { headers: { Authorization: `tma ${initData}`, "Accept": "application/json" }, withCredentials: true },
       );
       setUnreadCount(0);
@@ -97,7 +97,7 @@ const Header: React.FC<HeaderProps> = ({ pageHeading }) => {
     const fetchUnread = async () => {
       try {
         const { data } = await axios.get(
-          "https://ae0e-2402-e280-230d-3ff-945-fd4e-1470-53f8.ngrok-free.app/api/notifications/unread-count",
+          "https://e780-2402-e280-230d-3ff-f9e1-6449-ba90-46df.ngrok-free.app/api/notifications/unread-count",
           { headers: { Authorization: `tma ${initData}`, "Accept": "application/json" }, withCredentials: true },
         );
         setUnreadCount(data.count || 0);
@@ -112,7 +112,7 @@ const Header: React.FC<HeaderProps> = ({ pageHeading }) => {
 
     /* 2️⃣ SSE temps réel */
     const source = new EventSource(
-      `https://ae0e-2402-e280-230d-3ff-945-fd4e-1470-53f8.ngrok-free.app/api/notifications/stream?initData=${encodeURIComponent(initData)}`,
+      `https://e780-2402-e280-230d-3ff-f9e1-6449-ba90-46df.ngrok-free.app/api/notifications/stream?initData=${encodeURIComponent(initData)}`,
     );
     source.onmessage = () => setUnreadCount((c) => c + 1);
     source.onerror   = (err) => {
