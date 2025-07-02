@@ -6,15 +6,15 @@ import { useEffect, useRef, useState } from "react";
 import { useTonWallet, useTonConnectUI } from "@tonconnect/ui-react";
 import { Address } from "@ton/core";
 import { motion, AnimatePresence } from "framer-motion";
-import Button from "../common/Button";
-import { useWallet }       from "../context/WalletContext";     // 🆕 contexte global
-import { useUserGame }     from "../../store/useUserGame";   // 🆕 store global
-import useInvalidateMission1 from "../../hooks/useInvalidateMission1"; // 🆕 refetch
+
+import Button                     from "../common/Button";
+import { useWallet }              from "../context/WalletContext";
+import { useUserGame }            from "../../store/useUserGame";
+import useInvalidateMission1      from "../../hooks/useInvalidateMission1";
 
 /* ------------------------------------------------------------------ const */
 
-const DEPOSIT_ADDRESS =
-  "UQCcgQqpCCWy3YEzLLqRRQowXf5-YUC8nbPYP--WQm3dI8E8";
+const DEPOSIT_ADDRESS = "UQCcgQqpCCWy3YEzLLqRRQowXf5-YUC8nbPYP--WQm3dI8E8";
 
 /* ------------------------------------------------------------------ comp  */
 
@@ -25,39 +25,38 @@ const Deposit: React.FC = () => {
 
   const [amount, setAmt] = useState("");
   const [bal,    setBal] = useState<string | null>(null);
-  const [state,  setState] = useState<"idle" | "sending" | "done" | "error">(
-    "idle",
-  );
+  const [state,  setState] = useState<"idle" | "sending" | "done" | "error">("idle");
 
-  const sentRef  = useRef(false);
+  const sentRef   = useRef(false);
   const connected = !!wallet?.account?.address;
   const rawAddr   = wallet?.account?.address;
   const friendly  = rawAddr
     ? Address.parse(rawAddr).toString({ bounceable: false, testOnly: false })
     : "";
 
-  /* WalletContext : pour rafraîchir le solde */
-  const { refreshWallet } = useWallet();                  // 🆕
+  /* WalletContext : rafraîchit le solde */
+  const { refreshWallet } = useWallet();
 
-  const { setDepositInfo }   = useUserGame();          // 🆕 hydrate le store
-const invalidateMission1   = useInvalidateMission1(); // 🆕 refetch instantané
-
+  /* Store global & invalidation */
+  const { setDepositInfo }   = useUserGame();
+  const invalidateMission1   = useInvalidateMission1();
 
   /* ---------------- push wallet once ------------------- */
   useEffect(() => {
     if (!connected || sentRef.current) return;
     sentRef.current = true;
+
     fetch(`${import.meta.env.VITE_BACKEND_URL}/api/wallet/connect`, {
-      method: "POST",
+      method : "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `tma ${window.Telegram?.WebApp?.initData}`,
+        Authorization : `tma ${window.Telegram?.WebApp?.initData}`,
       },
       body: JSON.stringify({ walletAddress: friendly }),
     }).catch(console.error);
   }, [connected, friendly]);
 
-  /* ---------------- balance onchain -------------------- */
+  /* ---------------- balance on-chain -------------------- */
   useEffect(() => {
     if (!connected) return;
     const id = setTimeout(async () => {
@@ -83,23 +82,19 @@ const invalidateMission1   = useInvalidateMission1(); // 🆕 refetch instantan�
       setState("sending");
       await tonUI.sendTransaction({
         validUntil: Math.floor(Date.now() / 1000) + 300,
-        messages: [{ address: DEPOSIT_ADDRESS, amount: (ton * 1e9).toFixed(0) }],
+        messages : [{ address: DEPOSIT_ADDRESS, amount: (ton * 1e9).toFixed(0) }],
       });
 
       new Audio("/assets/sounds/10.Moneyadded.mp3").play().catch(() => {});
       /* ⏳ laisse le temps à la tx d’être indexée, puis rafraîchit le solde */
       setTimeout(async () => {
-        await refreshWallet();       // ✅ met à jour le contexte
+        await refreshWallet();                          // ✅ WalletContext
 
+        // 1️⃣ alimente le store avec le dépôt
+        setDepositInfo({ has: true, cents: Math.round(ton * 1000) });
 
-
-// 🆕 1.  alimente le store avec le nouveau dépôt
-setDepositInfo({ has: true, cents: Math.round(ton * 1000) });
-
-// 🆕 2.  force le refetch /mission1/status pour afficher “After Deposit”
-invalidateMission1();
-
-
+        // 2️⃣ force le refetch /mission1/status
+        invalidateMission1();
 
         setState("done");
         setAmt("");
