@@ -3,7 +3,6 @@
 // Pré-charge dépôt + Mission 1, alimente le store Zustand
 // et initialise le cache React-Query.
 // ------------------------------------------------------------
-
 import { useEffect } from "react";
 import { useUserGame } from "../store/useUserGame";
 import { useQueryClient } from "@tanstack/react-query";
@@ -27,13 +26,18 @@ export const useBootstrapUser = () => {
           headers: { Authorization: `tma ${token}` },
         });
         if (!depRes.ok) return;
-        const dep = await depRes.json();   // { hasDeposited, depositAmount }
+        const dep = await depRes.json();
+        // L'API peut renvoyer soit depositCents soit depositAmount :
+        const amountCents =
+          typeof dep.depositCents === "number"
+            ? dep.depositCents
+            : dep.depositAmount ?? 0;
 
         const hasDeposit =
-          dep.depositAmount > 0 || dep.hasDeposited === true;
+          amountCents > 0 || dep.hasDeposited === true;
 
         /* hydrate store */
-        setDepositInfo({ has: hasDeposit, cents: dep.depositAmount });
+        setDepositInfo({ has: hasDeposit, cents: amountCents });
 
         /* 2️⃣  Mission 1 si dépôt présent -------------------- */
         if (hasDeposit) {
