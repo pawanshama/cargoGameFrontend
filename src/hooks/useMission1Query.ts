@@ -29,7 +29,7 @@ export default function useMission1Query(
       const token = window.Telegram?.WebApp?.initData || "";
       const { data } = await axios.get<Mission1Status>(
         `${import.meta.env.VITE_BACKEND_URL}/api/mission1/status`,
-        { headers: { Authorization: `tma ${token}` } },
+        { headers: { Authorization: `tma ${token}` }, withCredentials: true },
       );
       console.log("[/mission1/status]", data);
       return data;
