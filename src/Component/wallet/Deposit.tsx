@@ -85,6 +85,8 @@ const Deposit: React.FC = () => {
         messages : [{ address: DEPOSIT_ADDRESS, amount: (ton * 1e9).toFixed(0) }],
       });
 
+        invalidateMission1();
+
       new Audio("/assets/sounds/10.Moneyadded.mp3").play().catch(() => {});
       /* ⏳ laisse le temps à la tx d’être indexée, puis rafraîchit le solde */
       setTimeout(async () => {
