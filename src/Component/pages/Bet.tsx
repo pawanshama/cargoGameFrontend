@@ -101,7 +101,7 @@ const Bet: React.FC = () => {
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       // Vérifie l’origine (remplace par le domaine réel du jeu)
-      if (!e.data?.action || !e.origin.endsWith("cargo-game-backend.vercel.app"))
+      if (!e.data?.action || !e.origin.endsWith("https://cargo-game-backend.vercel.app"))
         return;
 
       switch (e.data?.action) {
@@ -204,6 +204,7 @@ const Bet: React.FC = () => {
 
   /* 6. In-game iframe */
   if (showGame && gameUrl) {
+    console.log("🔗 [Bet] gameUrl", gameUrl);
     return (
       <div className="w-full h-[100dvh] overflow-hidden">
         <iframe
