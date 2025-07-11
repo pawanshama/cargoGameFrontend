@@ -177,7 +177,8 @@ const Bet: React.FC = () => {
       const url = new URL("https://cargo-game-backend.vercel.app");
       url.searchParams.set("token", matchToken);
       url.searchParams.set("initData", encodeURIComponent(initData));
-
+      console.log("url", url)
+      console.log("url href: ", url.href)
       setGameUrl(url.toString());
       setShowGame(true);
 
