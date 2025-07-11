@@ -169,8 +169,9 @@ const Bet: React.FC = () => {
         }
       );
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-
+      console.log("retruned response after start, before matchData :",r);
       const { matchToken } = await r.json();
+      console.log("retured response after match start :",matchToken);
       if (!matchToken) throw new Error("token missing");
 
       const url = new URL("https://cargo-game-backend.vercel.app/");
