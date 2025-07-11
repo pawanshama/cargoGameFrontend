@@ -170,7 +170,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TonConnectUIProvider
-        manifestUrl="https://corgi-in-space-front-end.vercel.app/tonconnect-manifest-v2.json"
+        manifestUrl="https://cargo-game-frontend.vercel.app/tonconnect-manifest-v2.json"
         actionsConfiguration={{ twaReturnUrl: "https://t.me/CorginSpaceBot" }}
       >
         <UserProvider>
