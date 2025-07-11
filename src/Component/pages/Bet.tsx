@@ -174,7 +174,7 @@ const Bet: React.FC = () => {
       console.log("retured response after match start :",matchToken);
       if (!matchToken) throw new Error("token missing");
 
-      const url = new URL("https://cargo-game-backend.vercel.app");
+      const url = new URL("https://cargo-game.vercel.app/");
       url.searchParams.set("token", matchToken);
       url.searchParams.set("initData", encodeURIComponent(initData));
       console.log("url", url)
