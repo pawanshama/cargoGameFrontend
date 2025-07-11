@@ -22,7 +22,7 @@ const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, setIsOpen
     if (!initData) return;
 
     axios
-      .get("https://e780-2402-e280-230d-3ff-f9e1-6449-ba90-46df.ngrok-free.app/api/notifications/all", {
+      .get("https://98e557d294e3.ngrok-free.app/api/notifications/all", {
         headers: {
           Authorization: `tma ${initData}`,
         },
