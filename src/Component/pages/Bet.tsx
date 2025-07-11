@@ -174,7 +174,7 @@ const Bet: React.FC = () => {
       console.log("retured response after match start :",matchToken);
       if (!matchToken) throw new Error("token missing");
 
-      const url = new URL("https://cargo-game-backend.vercel.app/");
+      const url = new URL("https://cargo-game-backend.vercel.app");
       url.searchParams.set("token", matchToken);
       url.searchParams.set("initData", encodeURIComponent(initData));
 
@@ -205,7 +205,7 @@ const Bet: React.FC = () => {
 
   /* 6. In-game iframe */
   if (showGame && gameUrl) {
-    console.log("🔗 [Bet] gameUrl", gameUrl);
+    // console.log("🔗 [Bet] gameUrl", gameUrl);
     return (
       <div className="w-full h-[100dvh] overflow-hidden">
         <iframe
