@@ -101,7 +101,7 @@ const Bet: React.FC = () => {
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       // Vérifie l’origine (remplace par le domaine réel du jeu)
-      if (!e.data?.action || !e.origin.endsWith("corgi-game-dist.vercel.app"))
+      if (!e.data?.action || !e.origin.endsWith("cargo-game-backend.vercel.app"))
         return;
 
       switch (e.data?.action) {
@@ -173,7 +173,7 @@ const Bet: React.FC = () => {
       const { matchToken } = await r.json();
       if (!matchToken) throw new Error("token missing");
 
-      const url = new URL("https://corgi-game-dist.vercel.app/");
+      const url = new URL("https://cargo-game-backend.vercel.app/");
       url.searchParams.set("token", matchToken);
       url.searchParams.set("initData", encodeURIComponent(initData));
 
