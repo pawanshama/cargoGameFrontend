@@ -169,16 +169,16 @@ const Bet: React.FC = () => {
         }
       );
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      console.log("retruned response after start, before matchData :",r);
+      // console.log("retruned response after start, before matchData :",r);
       const { matchToken } = await r.json();
-      console.log("retured response after match start :",matchToken);
+      // console.log("retured response after match start :",matchToken);
       if (!matchToken) throw new Error("token missing");
 
       const url = new URL("https://cargo-game-backend-3a8k.vercel.app/");
       url.searchParams.set("token", matchToken);
       url.searchParams.set("initData", encodeURIComponent(initData));
-      console.log("url", url)
-      console.log("url href: ", url.href)
+      // console.log("url", url)
+      // console.log("url href: ", url.href)
       setGameUrl(url.toString());
       setShowGame(true);
 
